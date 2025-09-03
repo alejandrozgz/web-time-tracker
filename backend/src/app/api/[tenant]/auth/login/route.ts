@@ -2,20 +2,15 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BusinessCentralClient } from '@/lib/bc-api';
 
-export async function GET(
+export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tenant: string }> }
 ) {
   try {
+    const { username, password, companyId } = await request.json();
     const { tenant: tenantSlug } = await params;
-    const url = new URL(request.url);
-    const companyId = url.searchParams.get('companyId');
 
-    console.log('🔍 Jobs API called:', { tenantSlug, companyId });
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
-    }
+    console.log('🔍 Login attempt:', { tenantSlug, username, companyId });
 
     // Get tenant from Supabase
     const { data: tenant, error: tenantError } = await supabaseAdmin
@@ -24,14 +19,13 @@ export async function GET(
       .eq('slug', tenantSlug)
       .single();
 
-    console.log('🔍 Tenant found:', tenant?.slug, 'OAuth enabled:', tenant?.oauth_enabled);
-
     if (tenantError || !tenant) {
-      console.error('❌ Tenant not found:', tenantError);
-      return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+      const errorResponse = NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
+      errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+      return errorResponse;
     }
 
-    // Get company from Supabase  
+    // Get company from Supabase
     const { data: company, error: companyError } = await supabaseAdmin
       .from('companies')
       .select('*')
@@ -39,103 +33,133 @@ export async function GET(
       .eq('tenant_id', tenant.id)
       .single();
 
-    console.log('🔍 Company found:', company?.name, 'BC Company ID:', company?.bc_company_id);
-
     if (companyError || !company) {
-      console.error('❌ Company not found:', companyError);
-      return NextResponse.json({ error: 'Company not found' }, { status: 404 });
+      const errorResponse = NextResponse.json({ error: 'Company not found' }, { status: 404 });
+      errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+      return errorResponse;
     }
 
-    // If OAuth is enabled, try to get from Business Central
-    if (tenant.oauth_enabled && tenant.bc_client_id && tenant.bc_client_secret && tenant.bc_tenant_id) {
-      console.log('🔍 Attempting to fetch from Business Central...');
+    // ✅ SIEMPRE permitir demo mode para debugging
+    if (username === 'demo' && password === '123') {
+      console.log('✅ Demo login successful');
       
+      const token = Buffer.from(JSON.stringify({
+        tenantId: tenant.id,
+        companyId: company.id,
+        resourceNo: 'DEMO001',
+        displayName: 'Demo User',
+        webUsername: 'demo',
+        exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+      })).toString('base64');
+
+      const response = NextResponse.json({
+        token,
+        user: {
+          id: 'DEMO001',
+          resourceNo: 'DEMO001',
+          displayName: 'Demo User'
+        },
+        tenant: {
+          id: tenant.id,
+          slug: tenant.slug,
+          name: tenant.name
+        },
+        company: {
+          id: company.id,
+          name: company.name
+        }
+      });
+
+      response.headers.set('Access-Control-Allow-Origin', '*');
+      return response;
+    }
+
+    // Production mode with OAuth 2.0 (if enabled for this tenant)
+    if (tenant.oauth_enabled && tenant.bc_client_id && tenant.bc_client_secret && tenant.bc_tenant_id) {
       try {
+        console.log(`🔍 Attempting BC OAuth login for tenant ${tenant.slug}, user ${username}`);
+        
         const bcClient = new BusinessCentralClient(tenant, company);
-        
-        console.log('🔍 BC Client created, fetching jobs and tasks...');
-        
-        const [bcJobs, bcTasks] = await Promise.all([
-          bcClient.getJobs(),
-          bcClient.getAllJobTasks()
-        ]);
 
-        console.log('🔍 BC Response - Jobs:', bcJobs?.length || 0, 'Tasks:', bcTasks?.length || 0);
-        console.log('🔍 Jobs data:', JSON.stringify(bcJobs, null, 2));
-        console.log('🔍 Tasks data:', JSON.stringify(bcTasks, null, 2));
+        // Validate resource exists and is active
+        const bcResource = await bcClient.validateResourceCredentials(username, password);
 
-        // Transform BC data to our format
-        const jobs = bcJobs.map(job => ({
-          id: job.systemId || job.id,
-          bc_job_id: job.no || job.number,
-          name: job.description || job.name,
-          description: job.description
-        }));
+        if (!bcResource || !bcResource.isActive) {
+          const errorResponse = NextResponse.json({ 
+            error: 'Invalid credentials or user inactive in Business Central' 
+          }, { status: 401 });
+          errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+          return errorResponse;
+        }
 
-        const tasks = bcTasks.map(task => ({
-          id: task.systemId || task.id,
-          job_id: jobs.find(j => j.bc_job_id === task.jobNo)?.id,
-          bc_task_id: task.jobTaskNo || task.taskNo,
-          description: task.description
-        }));
+        console.log(`✅ BC OAuth success for user ${bcResource.resourceNo}`);
 
-        console.log('🔍 Transformed data - Jobs:', jobs.length, 'Tasks:', tasks.length);
+        // Create JWT token with BC resource info
+        const token = Buffer.from(JSON.stringify({
+          tenantId: tenant.id,
+          companyId: company.id,
+          resourceNo: bcResource.resourceNo,
+          displayName: bcResource.displayName,
+          webUsername: bcResource.webUsername,
+          exp: Date.now() + (24 * 60 * 60 * 1000) // 24 hours
+        })).toString('base64');
 
-        return NextResponse.json({
-          jobs,
-          tasks,
-          source: 'business_central'
+        const response = NextResponse.json({
+          token,
+          user: {
+            id: bcResource.resourceNo,
+            resourceNo: bcResource.resourceNo,
+            displayName: bcResource.displayName
+          },
+          tenant: {
+            id: tenant.id,
+            slug: tenant.slug,
+            name: tenant.name
+          },
+          company: {
+            id: company.id,
+            name: company.name
+          }
         });
 
+        response.headers.set('Access-Control-Allow-Origin', '*');
+        return response;
+
       } catch (bcError) {
-        console.error('❌ Business Central error:', bcError);
+        console.error(`❌ Business Central OAuth error for tenant ${tenant.slug}:`, bcError);
         
-        // Fallback to local data if BC fails
-        console.log('🔍 Falling back to local Supabase data...');
+        // ❌ NO FALLBACK - Devolver error real
+        const errorResponse = NextResponse.json({ 
+          error: `Business Central authentication failed: ${bcError.message}. Try demo/123 for testing.` 
+        }, { status: 401 });
+        errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+        return errorResponse;
       }
-    } else {
-      console.log('🔍 OAuth not configured, using local Supabase data...');
     }
 
-    // Fallback: Fetch from local Supabase database
-    const [jobsResult, tasksResult] = await Promise.all([
-      supabaseAdmin
-        .from('jobs')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('status', 'active')
-        .order('name'),
-      
-      supabaseAdmin
-        .from('job_tasks')
-        .select('*')
-        .eq('company_id', companyId)
-        .eq('status', 'active')
-        .order('description')
-    ]);
-
-    console.log('🔍 Supabase data - Jobs:', jobsResult.data?.length || 0, 'Tasks:', tasksResult.data?.length || 0);
-
-    if (jobsResult.error) {
-      console.error('❌ Supabase jobs error:', jobsResult.error);
-      throw jobsResult.error;
-    }
-    if (tasksResult.error) {
-      console.error('❌ Supabase tasks error:', tasksResult.error);
-      throw tasksResult.error;
-    }
-
-    return NextResponse.json({
-      jobs: jobsResult.data || [],
-      tasks: tasksResult.data || [],
-      source: 'supabase_local'
-    });
+    // Si no hay OAuth habilitado, sugerir demo mode
+    const errorResponse = NextResponse.json({ 
+      error: `OAuth not configured for tenant ${tenant.slug}. Use demo/123 for testing or contact administrator.` 
+    }, { status: 503 });
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return errorResponse;
 
   } catch (error) {
-    console.error('❌ Jobs fetch error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to fetch jobs',
-      details: error.message 
-    }, { status: 500 });
+    console.error('❌ Login error:', error);
+    const errorResponse = NextResponse.json(
+      { error: 'Authentication failed' },
+      { status: 500 }
+    );
+    errorResponse.headers.set('Access-Control-Allow-Origin', '*');
+    return errorResponse;
   }
+}
+
+export async function OPTIONS(request: NextRequest) {
+  console.log('🔍 CORS preflight request');
+  const response = new NextResponse(null, { status: 204 });
+  response.headers.set('Access-Control-Allow-Origin', '*');
+  response.headers.set('Access-Control-Allow-Methods', 'POST, OPTIONS');
+  response.headers.set('Access-Control-Allow-Headers', 'Content-Type, Authorization');
+  return response;
 }
