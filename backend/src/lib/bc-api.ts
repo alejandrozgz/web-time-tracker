@@ -14,8 +14,8 @@ export class BusinessCentralClient {
   private tokenExpiry?: number;
 
   constructor(tenant: any, company: any) {
-    // URL correcta con tenant BC en la ruta
-    this.baseUrl = `https://api.businesscentral.dynamics.com/v2.0/${tenant.bc_tenant_id}/${tenant.bc_environment}/api/timetracker/v1`;
+    // ✅ URL CORREGIDA con ruta completa
+    this.baseUrl = `https://api.businesscentral.dynamics.com/v2.0/${tenant.bc_tenant_id}/${tenant.bc_environment}/api/timetracker/atp/v1.0`;
     this.companyId = company.bc_company_id;
     
     // OAuth config from tenant
@@ -79,20 +79,123 @@ export class BusinessCentralClient {
     try {
       const headers = await this.getHeaders();
       
-      // URL completa con tenant en el path
-      const response = await fetch(`${this.baseUrl}/companies(${this.companyId})/resourceAuth?$filter=webUsername eq '${username}'`, {
+      // ✅ URL corregida con la ruta completa
+      const url = `${this.baseUrl}/companies(${this.companyId})/resourceAuth?$filter=webUsername eq '${username}'`;
+      
+      console.log('🔍 BC Auth URL:', url); // Para debug
+      
+      const response = await fetch(url, {
         headers
       });
 
-      if (!response.ok) throw new Error('Authentication failed');
+      console.log('🔍 BC Auth Response Status:', response.status); // Para debug
+      
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('🔍 BC Auth Error Response:', errorText); // Para debug
+        throw new Error(`BC Authentication failed: ${response.status} - ${errorText}`);
+      }
 
       const data = await response.json();
+      console.log('🔍 BC Auth Data:', data); // Para debug
+      
       if (!data.value || data.value.length === 0) {
-        throw new Error('Invalid credentials');
+        throw new Error('Invalid credentials - user not found');
       }
 
       const resource = data.value[0];
       
       return {
         resourceNo: resource.resourceNo,
-        displayName: resource.name,
+        displayName: resource.name || resource.displayName,
+        webUsername: resource.webUsername,
+        isActive: resource.blocked !== true
+      };
+    } catch (error) {
+      console.error('BC Auth error:', error);
+      throw error; // ✅ Re-throw para que no haga fallback
+    }
+  }
+
+  async getJobs(): Promise<any[]> {
+    try {
+      const headers = await this.getHeaders();
+      
+      const response = await fetch(`${this.baseUrl}/companies(${this.companyId})/jobs`, {
+        headers
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch jobs');
+
+      const data = await response.json();
+      return data.value || [];
+    } catch (error) {
+      console.error('BC Jobs error:', error);
+      return [];
+    }
+  }
+
+  async getJobTasks(jobId: string): Promise<any[]> {
+    try {
+      const headers = await this.getHeaders();
+      
+      const response = await fetch(`${this.baseUrl}/companies(${this.companyId})/jobTasks?$filter=jobNo eq '${jobId}'`, {
+        headers
+      });
+
+      if (!response.ok) throw new Error('Failed to fetch job tasks');
+
+      const data = await response.json();
+      return data.value || [];
+    } catch (error) {
+      console.error('BC Job Tasks error:', error);
+      return [];
+    }
+  }
+
+  async createTimeEntry(timeEntry: any): Promise<any> {
+    try {
+      const headers = await this.getHeaders();
+      
+      const response = await fetch(`${this.baseUrl}/companies(${this.companyId})/timeEntries`, {
+        method: 'POST',
+        headers,
+        body: JSON.stringify(timeEntry)
+      });
+
+      if (!response.ok) throw new Error('Failed to create time entry');
+
+      return await response.json();
+    } catch (error) {
+      console.error('BC Create Time Entry error:', error);
+      throw error;
+    }
+  }
+
+  async getTimeEntries(resourceNo?: string, dateFrom?: string, dateTo?: string): Promise<any[]> {
+    try {
+      const headers = await this.getHeaders();
+      
+      let url = `${this.baseUrl}/companies(${this.companyId})/timeEntries`;
+      
+      const filters = [];
+      if (resourceNo) filters.push(`resourceNo eq '${resourceNo}'`);
+      if (dateFrom) filters.push(`date ge ${dateFrom}`);
+      if (dateTo) filters.push(`date le ${dateTo}`);
+      
+      if (filters.length > 0) {
+        url += `?$filter=${filters.join(' and ')}`;
+      }
+      
+      const response = await fetch(url, { headers });
+
+      if (!response.ok) throw new Error('Failed to fetch time entries');
+
+      const data = await response.json();
+      return data.value || [];
+    } catch (error) {
+      console.error('BC Time Entries error:', error);
+      return [];
+    }
+  }
+}

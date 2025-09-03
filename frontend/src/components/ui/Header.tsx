@@ -66,8 +66,8 @@ const Header: React.FC<HeaderProps> = () => {
             <span>{user?.displayName}</span>
           </div>
         </div>
-      </header>
-    </div>
+      </div>
+    </header>
   );
 };
 
