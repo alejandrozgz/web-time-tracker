@@ -214,6 +214,21 @@ export class BusinessCentralClient {
     }
   }
 
+  async createJobJournalLine(journalLine: any): Promise<any> {
+    try {
+      // 📝 Crear Job Journal Line (editable)
+      const endpoint = `/companies(${this.companyId})/jobJournalLines`;
+      const data = await this.callBCApi(endpoint, {
+        method: 'POST',
+        body: JSON.stringify(journalLine)
+      });
+      return data;
+    } catch (error) {
+      console.error('BC Create Job Journal Line error:', error);
+      throw error;
+    }
+  }
+
   async createTimeEntry(timeEntry: any): Promise<any> {
     try {
       const endpoint = `/companies(${this.companyId})/timeEntries`;
@@ -224,6 +239,20 @@ export class BusinessCentralClient {
       return data;
     } catch (error) {
       console.error('BC Create Time Entry error:', error);
+      throw error;
+    }
+  }
+
+  async postJobJournalBatch(batchName: string): Promise<any> {
+    try {
+      // 📮 POST Job Journal Batch (hace las entries inmutables)
+      const endpoint = `/companies(${this.companyId})/jobJournalBatches('${batchName}')/Microsoft.NAV.post`;
+      const data = await this.callBCApi(endpoint, {
+        method: 'POST'
+      });
+      return data;
+    } catch (error) {
+      console.error('BC Post Job Journal Batch error:', error);
       throw error;
     }
   }

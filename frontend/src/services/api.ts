@@ -1,5 +1,5 @@
 import axios from 'axios';
-import { LoginData, AuthResponse, Job, JobTask, TimeEntry } from '../types';
+import { LoginData, AuthResponse, Job, JobTask, TimeEntry, SyncResponse, SyncDashboard } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 const TENANT = process.env.REACT_APP_TENANT || 'empresa-demo';
@@ -22,6 +22,7 @@ class ApiService {
     });
   }
 
+  // 🔐 AUTHENTICATION
   async login(data: LoginData): Promise<AuthResponse> {
     const response = await this.client.post('/auth/login', data);
     return response.data;
@@ -32,11 +33,13 @@ class ApiService {
     return response.data.companies;
   }
 
+  // 📊 JOBS & TASKS
   async getJobs(companyId: string): Promise<{ jobs: Job[]; tasks: JobTask[] }> {
     const response = await this.client.get(`/jobs?companyId=${companyId}`);
     return response.data;
   }
 
+  // ⏱️ TIME ENTRIES
   async getTimeEntries(from?: string, to?: string): Promise<TimeEntry[]> {
     const params = new URLSearchParams();
     if (from) params.append('from', from);
@@ -58,6 +61,39 @@ class ApiService {
 
   async deleteTimeEntry(id: string): Promise<void> {
     await this.client.delete(`/time-entries/${id}`);
+  }
+
+  // 🔄 BUSINESS CENTRAL SYNC METHODS
+  async getSyncDashboard(companyId: string): Promise<SyncDashboard> {
+    const response = await this.client.get(`/sync/dashboard?companyId=${companyId}`);
+    return response.data;
+  }
+
+  async syncToBC(companyId: string): Promise<SyncResponse> {
+    const response = await this.client.post('/sync/to-bc', { companyId });
+    return response.data;
+  }
+
+  async getPendingSyncEntries(companyId: string): Promise<TimeEntry[]> {
+    const response = await this.client.get(`/sync/pending?companyId=${companyId}`);
+    return response.data.entries || [];
+  }
+
+  async retrySyncEntry(entryId: string): Promise<SyncResponse> {
+    const response = await this.client.post(`/sync/retry/${entryId}`);
+    return response.data;
+  }
+
+  // 📮 POST JOURNAL (FUTURO - Hacer entries inmutables)
+  async postJournalBatch(batchName: string): Promise<SyncResponse> {
+    const response = await this.client.post('/sync/post-journal', { batchName });
+    return response.data;
+  }
+
+  // 📊 SYNC STATUS
+  async getSyncHistory(companyId: string, limit = 10): Promise<any[]> {
+    const response = await this.client.get(`/sync/history?companyId=${companyId}&limit=${limit}`);
+    return response.data.history || [];
   }
 }
 
