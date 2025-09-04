@@ -1,47 +1,3 @@
-// backend/src/app/api/[tenant]/sync/dashboard/route.ts
-import { NextRequest, NextResponse } from 'next/server';
-import { supabaseAdmin } from '@/lib/supabase';
-
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ tenant: string }> }
-) {
-  try {
-    const { tenant: tenantSlug } = await params;
-    const url = new URL(request.url);
-    const companyId = url.searchParams.get('companyId');
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
-    }
-
-    // 📊 Query dashboard data
-    const { data: dashboardData, error } = await supabaseAdmin
-      .rpc('get_sync_dashboard', { p_company_id: companyId });
-
-    if (error) throw error;
-
-    const dashboard = dashboardData?.[0] || {
-      local_entries: 0,
-      draft_entries: 0,
-      posted_entries: 0,
-      error_entries: 0,
-      modified_entries: 0,
-      pending_hours: 0
-    };
-
-    return NextResponse.json(dashboard);
-
-  } catch (error) {
-    console.error('❌ Sync dashboard error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to load sync dashboard',
-      details: error.message 
-    }, { status: 500 });
-  }
-}
-
-// backend/src/app/api/[tenant]/sync/to-bc/route.ts
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BusinessCentralClient } from '@/lib/bc-api';
@@ -82,6 +38,8 @@ export async function POST(
     if (!tenant.oauth_enabled) {
       return NextResponse.json({
         success: false,
+        synced_entries: 0,
+        failed_entries: 0,
         message: 'Business Central sync not enabled for this tenant'
       });
     }
@@ -202,37 +160,6 @@ export async function POST(
       failed_entries: 0,
       message: `Sync failed: ${error.message}`,
       error: 'Failed to sync to Business Central'
-    }, { status: 500 });
-  }
-}
-
-// backend/src/app/api/[tenant]/sync/pending/route.ts
-export async function GET(
-  request: NextRequest,
-  { params }: { params: Promise<{ tenant: string }> }
-) {
-  try {
-    const url = new URL(request.url);
-    const companyId = url.searchParams.get('companyId');
-
-    if (!companyId) {
-      return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
-    }
-
-    const { data: entries, error } = await supabaseAdmin
-      .rpc('get_pending_sync_entries', { p_company_id: companyId });
-
-    if (error) throw error;
-
-    return NextResponse.json({
-      entries: entries || []
-    });
-
-  } catch (error) {
-    console.error('❌ Get pending entries error:', error);
-    return NextResponse.json({ 
-      error: 'Failed to get pending entries',
-      details: error.message 
     }, { status: 500 });
   }
 }
