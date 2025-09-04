@@ -48,19 +48,18 @@ export async function GET(
       return NextResponse.json({ error: 'Company not found' }, { status: 404 });
     }
 
-    // ✅ SIEMPRE intentar Business Central primero si OAuth está habilitado
+    // ✅ Business Central con OAuth
     if (tenant.oauth_enabled && tenant.bc_client_id && tenant.bc_client_secret && tenant.bc_tenant_id) {
-      console.log('🚀 Attempting to fetch jobs from Business Central...');
+      console.log('🚀 Attempting to fetch assignments from Business Central...');
       
       try {
         const bcClient = new BusinessCentralClient(tenant, company);
         
-        console.log('🔍 BC Client created, fetching jobs and tasks for current user...');
+        console.log('🔍 BC Client created, fetching resource assignments...');
         
-        // Get the current user's resource number from the request
-        // You can get this from the JWT token or pass it as a parameter
+        // Get the current user's resource number from JWT token
         const authHeader = request.headers.get('authorization');
-        let currentResourceNo = 'R0010'; // Default for now
+        let currentResourceNo = 'R0010'; // Default for demo
         
         if (authHeader && authHeader.startsWith('Bearer ')) {
           try {
@@ -73,12 +72,11 @@ export async function GET(
           }
         }
         
-        const [bcJobs, bcTasks] = await Promise.all([
-          bcClient.getJobsForResource(currentResourceNo), // 🔥 Use filtered method
-          bcClient.getAllJobTasks()
-        ]);
+        // ✅ UNA SOLA LLAMADA - Ya filtra jobs y tasks asignadas
+        const assignments = await bcClient.getResourceAssignments(currentResourceNo);
+        const { jobs: bcJobs, tasks: bcTasks } = assignments;
 
-        console.log('🔍 BC Response - Assigned Jobs:', bcJobs?.length || 0, 'All Tasks:', bcTasks?.length || 0);
+        console.log('🔍 BC Response - Assigned Jobs:', bcJobs?.length || 0, 'Assigned Tasks:', bcTasks?.length || 0);
 
         // Transform BC data to our format
         const jobs = bcJobs.map(job => ({
@@ -88,24 +86,25 @@ export async function GET(
           description: job.description || job.name
         }));
 
-        // Transform tasks - they're already filtered to assigned jobs only
+        // Transform tasks - already filtered to assigned tasks only
         const tasks = bcTasks
-          .filter(task => task.description && task.description.trim() !== '') // Filtrar tareas vacías
+          .filter(task => task.description && task.description.trim() !== '') // Remove empty descriptions
           .map(task => ({
             id: task.systemId || task.id,
             job_id: jobs.find(j => j.bc_job_id === task.jobNo)?.id,
             bc_task_id: task.jobTaskNo || task.taskNo,
             description: task.description
           }))
-          .filter(task => task.job_id); // Solo tareas que tengan job_id válido
+          .filter(task => task.job_id); // Only tasks with valid job_id
 
-        console.log('✅ BC Jobs transformed:', jobs.length, 'Tasks transformed:', tasks.length);
+        console.log('✅ BC Data transformed:');
         console.log('📋 Assigned Jobs:', jobs.map(j => `${j.bc_job_id}: ${j.name}`));
+        console.log('📋 Assigned Tasks:', tasks.map(t => `${t.bc_task_id}: ${t.description}`));
 
         return NextResponse.json({
           jobs,
           tasks,
-          source: 'business_central_resource_filtered'
+          source: 'business_central_resource_assignments'
         });
 
       } catch (bcError) {

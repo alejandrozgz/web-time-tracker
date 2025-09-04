@@ -161,17 +161,6 @@ export class BusinessCentralClient {
     }
   }
 
-  async getJobs(): Promise<any[]> {
-    try {
-      const endpoint = `/companies(${this.companyId})/jobs`;
-      const data = await this.callBCApi(endpoint);
-      return data.value || [];
-    } catch (error) {
-      console.error('BC Jobs error:', error);
-      return [];
-    }
-  }
-
   async getResourceAssignments(resourceNo: string): Promise<{ jobs: any[], tasks: any[] }> {
     try {
       // First get job planning lines for this resource
@@ -222,34 +211,6 @@ export class BusinessCentralClient {
     } catch (error) {
       console.error('BC Resource Assignments error:', error);
       return { jobs: [], tasks: [] };
-    }
-  }
-
-  // Keep the old method as fallback
-  async getJobsForResource(resourceNo: string): Promise<any[]> {
-    const assignments = await this.getResourceAssignments(resourceNo);
-    return assignments.jobs;
-  }
-
-  async getJobTasks(jobId: string): Promise<any[]> {
-    try {
-      const endpoint = `/companies(${this.companyId})/jobTasks?$filter=jobNo eq '${jobId}'`;
-      const data = await this.callBCApi(endpoint);
-      return data.value || [];
-    } catch (error) {
-      console.error('BC Job Tasks error:', error);
-      return [];
-    }
-  }
-
-  async getAllJobTasks(): Promise<any[]> {
-    try {
-      const endpoint = `/companies(${this.companyId})/jobTasks`;
-      const data = await this.callBCApi(endpoint);
-      return data.value || [];
-    } catch (error) {
-      console.error('BC All Job Tasks error:', error);
-      return [];
     }
   }
 
