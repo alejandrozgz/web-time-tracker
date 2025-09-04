@@ -14,20 +14,35 @@ export async function GET(
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
     }
 
-    // 📊 Query dashboard data
-    const { data: dashboardData, error } = await supabaseAdmin
-      .rpc('get_sync_dashboard', { p_company_id: companyId });
+    console.log('📊 Getting sync dashboard for company:', companyId);
 
-    if (error) throw error;
+    // 📈 Get sync statistics directly from time_entries (simplified schema)
+    const { data: stats, error } = await supabaseAdmin
+      .from('time_entries')
+      .select('bc_sync_status, hours')
+      .eq('company_id', companyId);
 
-    const dashboard = dashboardData?.[0] || {
-      local_entries: 0,
-      draft_entries: 0,
-      posted_entries: 0,
-      error_entries: 0,
-      modified_entries: 0,
-      pending_hours: 0
+    if (error) {
+      console.error('❌ Dashboard query error:', error);
+      throw error;
+    }
+
+    // 📊 Calculate dashboard metrics
+    const dashboard = {
+      company_id: companyId,
+      local_entries: stats.filter(e => e.bc_sync_status === 'local').length,
+      draft_entries: stats.filter(e => e.bc_sync_status === 'draft').length,
+      posted_entries: stats.filter(e => e.bc_sync_status === 'posted').length,
+      error_entries: stats.filter(e => e.bc_sync_status === 'error').length,
+      modified_entries: stats.filter(e => e.bc_sync_status === 'modified').length,
+      total_entries: stats.length,
+      pending_hours: stats
+        .filter(e => ['local', 'modified', 'error'].includes(e.bc_sync_status))
+        .reduce((sum, e) => sum + parseFloat(e.hours || 0), 0),
+      total_hours: stats.reduce((sum, e) => sum + parseFloat(e.hours || 0), 0)
     };
+
+    console.log('✅ Dashboard stats:', dashboard);
 
     return NextResponse.json(dashboard);
 

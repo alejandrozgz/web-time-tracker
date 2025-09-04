@@ -6,41 +6,54 @@ export async function GET(
   { params }: { params: Promise<{ tenant: string }> }
 ) {
   try {
-    const { tenant: tenantSlug } = await params;
     const url = new URL(request.url);
     const companyId = url.searchParams.get('companyId');
-
-    console.log('🔍 ===== GET PENDING SYNC ENTRIES =====');
-    console.log('🔍 Tenant:', tenantSlug);
-    console.log('🔍 Company ID:', companyId);
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
     }
 
-    // 📊 Get pending entries using the SQL function
+    console.log('📋 Getting pending sync entries for company:', companyId);
+
+    // 📋 Get pending sync entries (simplified schema)
     const { data: entries, error } = await supabaseAdmin
-      .rpc('get_pending_sync_entries', { p_company_id: companyId });
+      .from('time_entries')
+      .select(`
+        id,
+        bc_job_id,
+        bc_task_id,
+        job_name,
+        task_description,
+        date,
+        hours,
+        description,
+        bc_sync_status,
+        created_at,
+        last_modified_at,
+        bc_last_sync_at
+      `)
+      .eq('company_id', companyId)
+      .in('bc_sync_status', ['local', 'modified', 'error'])
+      .eq('is_editable', true)
+      .order('date', { ascending: false })
+      .order('created_at', { ascending: false });
 
     if (error) {
-      console.error('❌ Error getting pending entries:', error);
+      console.error('❌ Pending entries query error:', error);
       throw error;
     }
 
-    console.log(`📊 Found ${entries?.length || 0} pending entries`);
+    console.log(`✅ Found ${entries?.length || 0} pending entries`);
 
     return NextResponse.json({
-      entries: entries || [],
-      count: entries?.length || 0
+      entries: entries || []
     });
 
   } catch (error) {
     console.error('❌ Get pending entries error:', error);
     return NextResponse.json({ 
       error: 'Failed to get pending entries',
-      details: error.message,
-      entries: [],
-      count: 0
+      details: error.message 
     }, { status: 500 });
   }
 }
