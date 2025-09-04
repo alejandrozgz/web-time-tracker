@@ -18,7 +18,7 @@ export async function POST(
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
     }
 
-    // 🔍 Get tenant and company
+    // Get tenant and company
     const [tenantResult, companyResult] = await Promise.all([
       supabaseAdmin.from('tenants').select('*').eq('slug', tenantSlug).single(),
       supabaseAdmin.from('companies').select('*').eq('id', companyId).single()
@@ -34,7 +34,7 @@ export async function POST(
       throw new Error('Company not found');
     }
 
-    // 🔧 Check if BC sync is enabled
+    // Check if BC sync is enabled
     if (!tenant.oauth_enabled) {
       return NextResponse.json({
         success: false,
@@ -44,27 +44,9 @@ export async function POST(
       });
     }
 
-    // 📊 Get pending entries (using simplified schema with BC data inline)
+    // 📊 Get pending entries
     const { data: pendingEntries, error: entriesError } = await supabaseAdmin
-      .from('time_entries')
-      .select(`
-        id,
-        bc_job_id,
-        bc_task_id,
-        job_name,
-        task_description,
-        date,
-        hours,
-        description,
-        resource_no,
-        bc_sync_status,
-        user_id
-      `)
-      .eq('company_id', companyId)
-      .in('bc_sync_status', ['local', 'modified', 'error'])
-      .eq('is_editable', true)
-      .order('date')
-      .order('created_at');
+      .rpc('get_pending_sync_entries', { p_company_id: companyId });
 
     if (entriesError) throw entriesError;
 
@@ -82,7 +64,7 @@ export async function POST(
     // 🚀 Initialize BC Client
     const bcClient = new BusinessCentralClient(tenant, company);
     
-    // 🎯 Create unique batch name
+    // Create unique batch name
     const batchName = `WEBAPP_${Date.now()}`;
     let syncedCount = 0;
     let failedCount = 0;
@@ -92,15 +74,14 @@ export async function POST(
     for (const entry of pendingEntries) {
       try {
         console.log(`🔄 Syncing entry ${entry.id}: ${entry.description}`);
-        console.log(`📊 Job: ${entry.bc_job_id} | Task: ${entry.bc_task_id} | Hours: ${entry.hours}`);
 
         // 📤 Create Job Journal Line in BC
         const bcJournalLine = await bcClient.createJobJournalLine({
           journalTemplateName: 'JOB',
           journalBatchName: batchName,
           lineNo: 0, // BC will auto-assign
-          jobNo: entry.bc_job_id,
-          jobTaskNo: entry.bc_task_id,
+          jobNo: entry.job_bc_id,
+          jobTaskNo: entry.task_bc_id,
           type: 'Resource',
           no: entry.resource_no,
           postingDate: entry.date,
@@ -111,50 +92,56 @@ export async function POST(
           unitPrice: 0
         });
 
-        console.log(`✅ BC Journal Line created:`, bcJournalLine.id || bcJournalLine.systemId);
-
-        // ✅ Update local entry status to 'draft'
-        const { error: updateError } = await supabaseAdmin
+        // ✅ Update local status
+        await supabaseAdmin
           .from('time_entries')
           .update({
             bc_sync_status: 'draft',
-            bc_journal_id: bcJournalLine.id || bcJournalLine.systemId,
+            bc_journal_id: bcJournalLine.id,
             bc_batch_name: batchName,
             bc_last_sync_at: new Date().toISOString(),
-            last_modified_at: new Date().toISOString(),
-            is_editable: true // Still editable as draft in BC
+            is_editable: true // Still editable as draft
           })
           .eq('id', entry.id);
 
-        if (updateError) {
-          console.error(`❌ Failed to update entry ${entry.id}:`, updateError);
-          failedCount++;
-          errors.push(`Entry ${entry.id}: ${updateError.message}`);
-        } else {
-          syncedCount++;
-          console.log(`✅ Entry ${entry.id} synced successfully`);
-        }
+        syncedCount++;
+        console.log(`✅ Entry ${entry.id} synced successfully`);
 
-      } catch (syncError) {
-        console.error(`❌ Failed to sync entry ${entry.id}:`, syncError);
+      } catch (error) {
+        console.error(`❌ Failed to sync entry ${entry.id}:`, error);
         
-        // 📝 Mark entry as error
+        // Mark as error
         await supabaseAdmin
           .from('time_entries')
           .update({
             bc_sync_status: 'error',
-            bc_last_sync_at: new Date().toISOString(),
-            last_modified_at: new Date().toISOString()
+            bc_last_sync_at: new Date().toISOString()
           })
           .eq('id', entry.id);
 
         failedCount++;
-        errors.push(`Entry ${entry.id}: ${syncError.message}`);
+        errors.push(`Entry ${entry.id}: ${error.message}`);
       }
     }
 
-    console.log(`🔚 Sync completed: ${syncedCount} success, ${failedCount} failed`);
-    console.log('🔚 ===== END SYNC TO BC =====');
+    // 📊 Create batch record
+    if (syncedCount > 0) {
+      await supabaseAdmin
+        .from('bc_sync_batches')
+        .insert({
+          tenant_id: tenant.id,
+          company_id: companyId,
+          batch_name: batchName,
+          status: 'draft',
+          entries_count: syncedCount,
+          total_hours: pendingEntries
+            .filter(e => !errors.some(err => err.includes(e.id)))
+            .reduce((sum, e) => sum + parseFloat(e.hours), 0)
+        });
+    }
+
+    console.log('✅ ===== SYNC TO BC COMPLETED =====');
+    console.log(`📊 Synced: ${syncedCount}, Failed: ${failedCount}`);
 
     return NextResponse.json({
       success: true,
