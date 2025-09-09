@@ -65,7 +65,7 @@ export async function POST(
     const bcClient = new BusinessCentralClient(tenant, company);
     
     // Create unique batch name
-    const batchName = `WEBAPP_${Date.now()}`;
+    const batchName = 'TT-WEB';
     let syncedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
@@ -77,7 +77,7 @@ export async function POST(
 
         // 📤 Create Job Journal Line in BC
         const bcJournalLine = await bcClient.createJobJournalLine({
-          journalTemplateName: 'JOB',
+          journalTemplateName: 'PROJECT',
           journalBatchName: batchName,
           lineNo: 0, // BC will auto-assign
           jobNo: entry.job_bc_id,
