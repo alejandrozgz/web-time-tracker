@@ -202,6 +202,7 @@ const Dashboard: React.FC = () => {
           <ClockifyTracker
             assignments={assignments}
             onUpdate={loadData}
+            companyId={company?.id || ''}
           />
         </div>
       )}
@@ -210,11 +211,8 @@ const Dashboard: React.FC = () => {
         <WeeklyTimesheet
           assignments={assignments}
           timeEntries={timeEntries}
-          currentWeek={currentWeek}
-          onWeekNavigate={navigateWeek}
           onUpdate={loadData}
-          formatDate={formatDate}
-          getDayName={getDayName}
+          companyId={company?.id || ''}
         />
       )}
     </div>

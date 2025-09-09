@@ -40,11 +40,16 @@ export enum BCSyncStatus {
   ERROR = 'error'            // Error de sync
 }
 
-// 📊 INTERFAZ EXTENDIDA PARA TIME ENTRY
+// 📊 INTERFAZ ACTUALIZADA PARA TIME ENTRY - USANDO BC IDs DIRECTAMENTE
 export interface TimeEntry {
   id: string;
-  job_id: string;
-  task_id: string;
+  
+  // 🔗 BC IDs DIRECTOS (no foreign keys)
+  bc_job_id: string;         // Business Central Job ID
+  bc_task_id: string;        // Business Central Task ID
+  resource_no: string;       // Business Central Resource No
+  
+  // 📅 DATOS DE TIEMPO
   date: string;
   hours: number;
   description: string;
@@ -65,9 +70,22 @@ export interface TimeEntry {
   // 🎛️ FLAGS
   is_editable: boolean;       // false si está posted
   
-  // 📊 DATOS JOINED DEL BACKEND (para display)
-  jobs?: Job;
-  job_tasks?: JobTask;
+  // 📊 DATOS JOINED DEL BACKEND (para display) - OPCIONAL
+  job_name?: string;          // Para mostrar nombre del job
+  task_description?: string;  // Para mostrar descripción de la tarea
+}
+
+// 🎯 INTERFAZ ESPECÍFICA PARA CREAR TIME ENTRY
+export interface CreateTimeEntryData {
+  bc_job_id: string;
+  bc_task_id: string;
+  date: string;
+  hours: number;
+  description: string;
+  start_time?: string;
+  end_time?: string;
+  resource_no?: string;
+  companyId: string; // Para el backend, no forma parte de TimeEntry
 }
 
 // 📦 INTERFAZ PARA BATCH DE SYNC

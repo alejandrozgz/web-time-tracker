@@ -1,8 +1,8 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Square, Clock, Save, Plus } from 'lucide-react';
+import React, { useState, useEffect, useCallback } from 'react';
+import { Play, Pause, Square, Clock } from 'lucide-react';
 import toast from 'react-hot-toast';
 import apiService from '../../services/api';
-import { TimeEntry, Assignment, Job, JobTask } from '../../types';
+import { Assignment, TimeEntry } from '../../types';
 
 interface ClockifyTrackerProps {
   assignments: Assignment;
@@ -11,361 +11,509 @@ interface ClockifyTrackerProps {
 }
 
 const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate, companyId }) => {
-  // 🎯 State usando BC IDs
-  const [selectedBCJobId, setSelectedBCJobId] = useState<string>('');
-  const [selectedBCTaskId, setSelectedBCTaskId] = useState<string>('');
-  const [description, setDescription] = useState<string>('');
-  const [isRunning, setIsRunning] = useState<boolean>(false);
-  const [elapsedTime, setElapsedTime] = useState<number>(0);
-  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [trackingMode, setTrackingMode] = useState<'timer' | 'manual'>('timer');
+  const [description, setDescription] = useState('');
+  const [selectedProject, setSelectedProject] = useState('');
+  const [selectedTask, setSelectedTask] = useState('');
+  const [showProjectDropdown, setShowProjectDropdown] = useState(false);
   
-  // Manual time entry mode
-  const [manualMode, setManualMode] = useState<boolean>(false);
-  const [manualDate, setManualDate] = useState<string>(new Date().toISOString().split('T')[0]);
-  const [manualStartTime, setManualStartTime] = useState<string>('');
-  const [manualEndTime, setManualEndTime] = useState<string>('');
-  const [manualHours, setManualHours] = useState<string>('');
+  // Timer state
+  const [isRunning, setIsRunning] = useState(false);
+  const [startTime, setStartTime] = useState<Date | null>(null);
+  const [elapsedTime, setElapsedTime] = useState(0);
 
-  // 🔄 Get selected job and task objects
-  const selectedJob = assignments.jobs.find(j => j.bc_job_id === selectedBCJobId);
-  const selectedTask = assignments.tasks.find(t => t.bc_task_id === selectedBCTaskId && t.job_id === selectedJob?.id);
+  // Manual entry state
+  const [manualEntry, setManualEntry] = useState({
+    date: new Date().toISOString().split('T')[0],
+    startTime: '',
+    endTime: '',
+    calculatedHours: 0
+  });
 
-  // Timer effect
+  // Recent entries
+  const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
+
+  // Timer logic
   useEffect(() => {
     let interval: NodeJS.Timeout;
+    
     if (isRunning && startTime) {
       interval = setInterval(() => {
-        setElapsedTime(Math.floor((Date.now() - startTime.getTime()) / 1000));
+        setElapsedTime(Date.now() - startTime.getTime());
       }, 1000);
     }
-    return () => clearInterval(interval);
+    
+    return () => {
+      if (interval) clearInterval(interval);
+    };
   }, [isRunning, startTime]);
 
-  // Format time helper
-  const formatTime = (seconds: number): string => {
-    const hours = Math.floor(seconds / 3600);
-    const minutes = Math.floor((seconds % 3600) / 60);
-    const remainingSeconds = seconds % 60;
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${remainingSeconds.toString().padStart(2, '0')}`;
+  // Manual entry calculations
+  useEffect(() => {
+    if (manualEntry.startTime && manualEntry.endTime) {
+      const start = new Date(`${manualEntry.date}T${manualEntry.startTime}`);
+      const end = new Date(`${manualEntry.date}T${manualEntry.endTime}`);
+      
+      if (end > start) {
+        const diffMs = end.getTime() - start.getTime();
+        const diffHours = diffMs / (1000 * 60 * 60);
+        setManualEntry(prev => ({ ...prev, calculatedHours: diffHours }));
+      } else {
+        setManualEntry(prev => ({ ...prev, calculatedHours: 0 }));
+      }
+    } else {
+      setManualEntry(prev => ({ ...prev, calculatedHours: 0 }));
+    }
+  }, [manualEntry.startTime, manualEntry.endTime, manualEntry.date]);
+
+  const loadRecentEntries = useCallback(async () => {
+    try {
+      const today = new Date();
+      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+      
+      const entries = await apiService.getTimeEntries(
+        weekAgo.toISOString().split('T')[0],
+        today.toISOString().split('T')[0]
+      );
+      
+      // Sort by date desc, then by id desc
+      const sorted = entries.sort((a, b) => {
+        const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
+        if (dateCompare !== 0) return dateCompare;
+        return b.id.localeCompare(a.id);
+      });
+      
+      setRecentEntries(sorted.slice(0, 5)); // Show last 5
+    } catch (error) {
+      console.error('Error loading recent entries:', error);
+    }
+  }, []);
+
+  useEffect(() => {
+    loadRecentEntries();
+  }, [loadRecentEntries]);
+
+  const formatTime = (ms: number): string => {
+    const totalSeconds = Math.floor(ms / 1000);
+    const hours = Math.floor(totalSeconds / 3600);
+    const minutes = Math.floor((totalSeconds % 3600) / 60);
+    const seconds = totalSeconds % 60;
+
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
   };
 
-  // Start timer
-  const handleStart = () => {
-    if (!selectedBCJobId || !selectedBCTaskId || !description.trim()) {
-      toast.error('Please select project, task and add description');
-      return;
+  const formatHours = (hours: number): string => {
+    const h = Math.floor(hours);
+    const m = Math.round((hours - h) * 60);
+    return `${h}h ${m}m`;
+  };
+
+  const canStartTimer = (): boolean => {
+    return description.trim() !== '' && selectedProject !== '' && selectedTask !== '';
+  };
+
+  const handleStartTimer = () => {
+    if (!canStartTimer()) {
+      if (!description.trim()) {
+        toast.error('Debe ingresar una descripción');
+        return;
+      }
+      if (!selectedTask) {
+        toast.error('Debe seleccionar una tarea');
+        return;
+      }
     }
 
+    setIsRunning(true);
     setStartTime(new Date());
     setElapsedTime(0);
-    setIsRunning(true);
-    toast.success('Timer started');
+    toast.success('Timer iniciado');
   };
 
-  // Stop timer and save
-  const handleStop = async () => {
-    if (!startTime || !isRunning) return;
+  const handlePauseTimer = () => {
+    setIsRunning(false);
+    toast.success('Timer pausado');
+  };
+
+  const handleStopTimer = async () => {
+    if (!startTime) return;
 
     const endTime = new Date();
-    const hours = (endTime.getTime() - startTime.getTime()) / (1000 * 60 * 60);
+    const totalMs = endTime.getTime() - startTime.getTime();
+    const totalHours = totalMs / (1000 * 60 * 60);
 
-    if (hours < 0.01) {
-      toast.error('Minimum 36 seconds required');
+    if (totalHours < 0.01) {
+      toast.error('El tiempo mínimo es 1 minuto');
       return;
     }
 
     try {
+      // 🎯 CAMBIO: Usar BC IDs y obtener objetos correspondientes
+      const selectedProjectData = assignments.jobs.find(job => job.id === selectedProject);
+      const selectedTaskData = assignments.tasks.find(task => task.id === selectedTask);
+
       await apiService.createTimeEntry({
-        bc_job_id: selectedBCJobId,
-        bc_task_id: selectedBCTaskId,
-        date: startTime.toISOString().split('T')[0],
-        hours: parseFloat(hours.toFixed(2)),
+        bc_job_id: selectedProjectData?.bc_job_id || '',
+        bc_task_id: selectedTaskData?.bc_task_id || '',
+        date: new Date().toISOString().split('T')[0],
+        hours: totalHours,
         description: description.trim(),
-        start_time: startTime.toTimeString().split(' ')[0].substring(0, 5),
-        end_time: endTime.toTimeString().split(' ')[0].substring(0, 5),
-        companyId // Pass company ID for backend
+        start_time: startTime.toTimeString().slice(0, 8),
+        end_time: endTime.toTimeString().slice(0, 8),
+        companyId
       });
 
-      toast.success(`Time entry saved: ${hours.toFixed(2)} hours`);
-      
-      // Reset form
+      toast.success(`${formatHours(totalHours)} agregado exitosamente`);
+
+      // Reset timer
       setIsRunning(false);
       setStartTime(null);
       setElapsedTime(0);
       setDescription('');
-      onUpdate();
 
+      onUpdate();
+      loadRecentEntries();
     } catch (error: any) {
-      console.error('Error saving time entry:', error);
-      toast.error(error.response?.data?.error || 'Failed to save time entry');
+      toast.error(error.response?.data?.error || 'Error al guardar entrada');
     }
   };
 
-  // Save manual entry
-  const handleSaveManual = async () => {
-    if (!selectedBCJobId || !selectedBCTaskId || !description.trim()) {
-      toast.error('Please select project, task and add description');
+  const handleManualSubmit = async () => {
+    if (!description.trim()) {
+      toast.error('La descripción es obligatoria');
       return;
     }
 
-    let hours: number;
+    if (!selectedProject || !selectedTask) {
+      toast.error('Debe seleccionar una tarea');
+      return;
+    }
 
-    // Calculate hours from time range or direct input
-    if (manualStartTime && manualEndTime) {
-      const start = new Date(`2000-01-01T${manualStartTime}:00`);
-      const end = new Date(`2000-01-01T${manualEndTime}:00`);
-      
-      if (end <= start) {
-        toast.error('End time must be after start time');
-        return;
-      }
-      
-      hours = (end.getTime() - start.getTime()) / (1000 * 60 * 60);
-    } else if (manualHours) {
-      hours = parseFloat(manualHours);
-      if (isNaN(hours) || hours <= 0 || hours > 24) {
-        toast.error('Hours must be between 0.1 and 24');
-        return;
-      }
-    } else {
-      toast.error('Please specify either time range or hours');
+    if (!manualEntry.startTime || !manualEntry.endTime) {
+      toast.error('Debe ingresar hora de inicio y fin');
+      return;
+    }
+
+    if (manualEntry.calculatedHours <= 0) {
+      toast.error('La hora de fin debe ser posterior al inicio');
+      return;
+    }
+
+    if (manualEntry.calculatedHours > 24) {
+      toast.error('Una entrada no puede exceder 24 horas');
       return;
     }
 
     try {
+      // 🎯 CAMBIO: Usar BC IDs y obtener objetos correspondientes
+      const selectedProjectData = assignments.jobs.find(job => job.id === selectedProject);
+      const selectedTaskData = assignments.tasks.find(task => task.id === selectedTask);
+
       await apiService.createTimeEntry({
-        bc_job_id: selectedBCJobId,
-        bc_task_id: selectedBCTaskId,
-        date: manualDate,
-        hours: parseFloat(hours.toFixed(2)),
+        bc_job_id: selectedProjectData?.bc_job_id || '',
+        bc_task_id: selectedTaskData?.bc_task_id || '',
+        date: manualEntry.date,
+        hours: manualEntry.calculatedHours,
         description: description.trim(),
-        start_time: manualStartTime || undefined,
-        end_time: manualEndTime || undefined,
+        start_time: manualEntry.startTime,
+        end_time: manualEntry.endTime,
         companyId
       });
 
-      toast.success(`Manual entry saved: ${hours.toFixed(2)} hours`);
+      toast.success(`${formatHours(manualEntry.calculatedHours)} agregado para ${manualEntry.date}`);
       
-      // Reset form
+      // Reset manual entry
+      setManualEntry({
+        date: new Date().toISOString().split('T')[0],
+        startTime: '',
+        endTime: '',
+        calculatedHours: 0
+      });
       setDescription('');
-      setManualStartTime('');
-      setManualEndTime('');
-      setManualHours('');
+      
       onUpdate();
-
+      loadRecentEntries();
     } catch (error: any) {
-      console.error('Error saving manual entry:', error);
-      toast.error(error.response?.data?.error || 'Failed to save time entry');
+      toast.error(error.response?.data?.error || 'Error al guardar entrada');
     }
   };
 
-  // Handle job selection change
-  const handleJobChange = (bcJobId: string) => {
-    setSelectedBCJobId(bcJobId);
-    setSelectedBCTaskId(''); // Reset task when job changes
+  // 🎯 CAMBIO: Ajustar para usar BC IDs en las recent entries
+  const handleQuickStart = (entry: TimeEntry) => {
+    setDescription(entry.description);
+    
+    // Encontrar job y task por BC IDs
+    const job = assignments.jobs.find(j => j.bc_job_id === entry.bc_job_id);
+    const task = assignments.tasks.find(t => t.bc_task_id === entry.bc_task_id);
+    
+    if (job) setSelectedProject(job.id);
+    if (task) setSelectedTask(task.id);
+    setShowProjectDropdown(false);
   };
 
-  // Get available tasks for selected job
-  const availableTasks = selectedJob 
-    ? assignments.tasks.filter(task => task.job_id === selectedJob.id)
-    : [];
+  const selectedProjectData = assignments.jobs.find(job => job.id === selectedProject);
+  const selectedTaskData = assignments.tasks.find(task => task.id === selectedTask);
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-6">
-      <div className="flex items-center justify-between mb-6">
-        <h2 className="text-lg font-semibold text-gray-900">Time Tracker</h2>
-        <div className="flex gap-2">
+    <div className="bg-white shadow-sm rounded-lg border border-gray-200">
+      <div className="p-6 border-b border-gray-100">
+        {/* Mode Toggle */}
+        <div className="flex items-center gap-2 mb-4">
           <button
-            onClick={() => setManualMode(!manualMode)}
-            className={`px-3 py-1 text-sm rounded-md border transition-colors ${
-              manualMode 
-                ? 'bg-blue-50 text-blue-700 border-blue-200' 
-                : 'bg-gray-50 text-gray-700 border-gray-200 hover:bg-gray-100'
+            onClick={() => setTrackingMode('timer')}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              trackingMode === 'timer'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            {manualMode ? 'Timer Mode' : 'Manual Mode'}
+            ⏱️ Timer
+          </button>
+          <button
+            onClick={() => setTrackingMode('manual')}
+            className={`px-3 py-1 rounded-full text-sm font-medium transition-colors ${
+              trackingMode === 'manual'
+                ? 'bg-blue-100 text-blue-700'
+                : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
+            }`}
+          >
+            🕐 Manual
           </button>
         </div>
-      </div>
 
-      {/* Project and Task Selection */}
-      <div className="space-y-4 mb-6">
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          {/* Project Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Project *
-            </label>
-            <select
-              value={selectedBCJobId}
-              onChange={(e) => handleJobChange(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={isRunning}
-            >
-              <option value="">Select project...</option>
-              {assignments.jobs.map((job) => (
-                <option key={job.bc_job_id} value={job.bc_job_id}>
-                  {job.bc_job_id} - {job.name}
-                </option>
-              ))}
-            </select>
-          </div>
-
-          {/* Task Selection */}
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Task *
-            </label>
-            <select
-              value={selectedBCTaskId}
-              onChange={(e) => setSelectedBCTaskId(e.target.value)}
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              disabled={!selectedBCJobId || isRunning}
-            >
-              <option value="">Select task...</option>
-              {availableTasks.map((task) => (
-                <option key={task.bc_task_id} value={task.bc_task_id}>
-                  {task.bc_task_id} - {task.description}
-                </option>
-              ))}
-            </select>
-          </div>
-        </div>
-
-        {/* Description */}
-        <div>
-          <label className="block text-sm font-medium text-gray-700 mb-2">
-            Description *
-          </label>
+        {/* Description Input */}
+        <div className="mb-4">
           <input
             type="text"
+            placeholder="¿En qué estás trabajando? *"
             value={description}
             onChange={(e) => setDescription(e.target.value)}
-            placeholder="What are you working on?"
-            className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            disabled={isRunning}
+            className={`w-full px-4 py-3 text-lg border-0 border-b-2 focus:outline-none placeholder-gray-400 ${
+              description.trim() ? 'border-gray-200 focus:border-blue-500' : 'border-red-200 focus:border-red-500'
+            }`}
+            required
           />
-        </div>
-      </div>
-
-      {!manualMode ? (
-        /* Timer Mode */
-        <div className="space-y-4">
-          <div className="flex items-center justify-center">
-            <div className="text-4xl font-mono font-bold text-gray-900">
-              {formatTime(elapsedTime)}
-            </div>
-          </div>
-
-          <div className="flex justify-center gap-4">
-            {!isRunning ? (
-              <button
-                onClick={handleStart}
-                className="flex items-center gap-2 px-6 py-3 bg-green-600 text-white rounded-lg hover:bg-green-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-                disabled={!selectedBCJobId || !selectedBCTaskId || !description.trim()}
-              >
-                <Play className="w-5 h-5" />
-                Start Timer
-              </button>
-            ) : (
-              <button
-                onClick={handleStop}
-                className="flex items-center gap-2 px-6 py-3 bg-red-600 text-white rounded-lg hover:bg-red-700 transition-colors"
-              >
-                <Square className="w-5 h-5" />
-                Stop & Save
-              </button>
-            )}
-          </div>
-
-          {isRunning && startTime && (
-            <div className="text-center text-sm text-gray-600">
-              Started at {startTime.toLocaleTimeString()}
-            </div>
+          {!description.trim() && (
+            <p className="mt-1 text-xs text-red-500">* La descripción es obligatoria</p>
           )}
         </div>
-      ) : (
-        /* Manual Mode */
-        <div className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Date *
-              </label>
-              <input
-                type="date"
-                value={manualDate}
-                onChange={(e) => setManualDate(e.target.value)}
-                max={new Date().toISOString().split('T')[0]}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
 
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                Start Time
-              </label>
-              <input
-                type="time"
-                value={manualStartTime}
-                onChange={(e) => {
-                  setManualStartTime(e.target.value);
-                  setManualHours(''); // Clear hours when using time range
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-
-            <div>
-              <label className="block text-sm font-medium text-gray-700 mb-2">
-                End Time
-              </label>
-              <input
-                type="time"
-                value={manualEndTime}
-                onChange={(e) => {
-                  setManualEndTime(e.target.value);
-                  setManualHours(''); // Clear hours when using time range
-                }}
-                className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-              />
-            </div>
-          </div>
-
-          <div className="text-center text-sm text-gray-500">OR</div>
-
-          <div>
-            <label className="block text-sm font-medium text-gray-700 mb-2">
-              Hours
-            </label>
-            <input
-              type="number"
-              step="0.1"
-              min="0.1"
-              max="24"
-              value={manualHours}
-              onChange={(e) => {
-                setManualHours(e.target.value);
-                setManualStartTime(''); // Clear times when using direct hours
-                setManualEndTime('');
-              }}
-              placeholder="e.g., 2.5"
-              className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent"
-            />
-          </div>
-
-          <div className="flex justify-center">
+        {/* Task Selector - Solo tareas clickeables */}
+        <div className="flex items-center gap-3 mb-6">
+          <div className="relative">
             <button
-              onClick={handleSaveManual}
-              className="flex items-center gap-2 px-6 py-3 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-              disabled={!selectedBCJobId || !selectedBCTaskId || !description.trim() || (!manualHours && (!manualStartTime || !manualEndTime))}
+              onClick={() => setShowProjectDropdown(!showProjectDropdown)}
+              className="flex items-center gap-2 px-3 py-2 border border-gray-300 rounded-md hover:bg-gray-50 text-sm"
             >
-              <Save className="w-5 h-5" />
-              Save Entry
+              <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+              {selectedTaskData && selectedProjectData ? (
+                <span>{selectedProjectData.name} → {selectedTaskData.description}</span>
+              ) : (
+                <span className="text-gray-500">Seleccionar tarea</span>
+              )}
+              <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
+                <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
+              </svg>
             </button>
+
+            {showProjectDropdown && (
+              <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+                <div className="p-3 border-b border-gray-100">
+                  <h3 className="font-medium text-gray-900">Seleccionar Tarea</h3>
+                </div>
+                {assignments.jobs.map(job => (
+                  <div key={job.id} className="border-b border-gray-100 last:border-0">
+                    {/* Proyecto - SOLO VISUAL, NO CLICKEABLE */}
+                    <div className="px-3 py-2 bg-gray-50 flex items-center gap-2 cursor-default">
+                      <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                      <span className="font-medium text-gray-700">{job.name}</span>
+                    </div>
+                    
+                    {/* Tareas - CLICKEABLES */}
+                    {assignments.tasks.filter(t => t.job_id === job.id).map(task => (
+                      <button
+                        key={task.id}
+                        onClick={() => {
+                          setSelectedProject(job.id);
+                          setSelectedTask(task.id);
+                          setShowProjectDropdown(false);
+                        }}
+                        className={`w-full px-6 py-2 text-left hover:bg-blue-50 text-sm flex items-center gap-2 transition-colors ${
+                          selectedTask === task.id ? 'bg-blue-100 text-blue-700' : 'text-gray-600'
+                        }`}
+                      >
+                        <div className={`w-2 h-2 rounded-full ${
+                          selectedTask === task.id ? 'bg-blue-500' : 'bg-gray-400'
+                        }`}></div>
+                        {task.description}
+                      </button>
+                    ))}
+                  </div>
+                ))}
+              </div>
+            )}
           </div>
         </div>
-      )}
+
+        {/* Timer Mode */}
+        {trackingMode === 'timer' && (
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className={`text-2xl font-mono font-bold ${isRunning ? 'text-blue-600' : 'text-gray-700'}`}>
+                {formatTime(elapsedTime)}
+              </div>
+              
+              {!isRunning ? (
+                <button
+                  onClick={handleStartTimer}
+                  disabled={!canStartTimer()}
+                  className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-medium transition-colors ${
+                    canStartTimer()
+                      ? 'bg-blue-600 text-white hover:bg-blue-700'
+                      : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+                  }`}
+                >
+                  <Play className="w-4 h-4" />
+                  Iniciar
+                </button>
+              ) : (
+                <div className="flex items-center gap-2">
+                  <button
+                    onClick={handlePauseTimer}
+                    className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors"
+                  >
+                    <Pause className="w-4 h-4" />
+                    Pausar
+                  </button>
+                  <button
+                    onClick={handleStopTimer}
+                    className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
+                  >
+                    <Square className="w-4 h-4" />
+                    Parar
+                  </button>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
+
+        {/* Manual Mode */}
+        {trackingMode === 'manual' && (
+          <div className="space-y-4">
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Fecha
+                </label>
+                <input
+                  type="date"
+                  value={manualEntry.date}
+                  onChange={(e) => setManualEntry(prev => ({ ...prev, date: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora inicio
+                </label>
+                <input
+                  type="time"
+                  value={manualEntry.startTime}
+                  onChange={(e) => setManualEntry(prev => ({ ...prev, startTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Hora fin
+                </label>
+                <input
+                  type="time"
+                  value={manualEntry.endTime}
+                  onChange={(e) => setManualEntry(prev => ({ ...prev, endTime: e.target.value }))}
+                  className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500 text-sm"
+                />
+              </div>
+            </div>
+
+            {manualEntry.calculatedHours > 0 && (
+              <div className="flex items-center gap-2 text-sm text-gray-600">
+                <span>Tiempo calculado:</span>
+                <span className="font-medium text-blue-600">
+                  {formatHours(manualEntry.calculatedHours)}
+                </span>
+              </div>
+            )}
+
+            <button
+              onClick={handleManualSubmit}
+              disabled={!description.trim() || !selectedTask || manualEntry.calculatedHours <= 0}
+              className={`w-full py-2 rounded-lg text-sm font-medium transition-colors ${
+                description.trim() && selectedTask && manualEntry.calculatedHours > 0
+                  ? 'bg-blue-600 text-white hover:bg-blue-700'
+                  : 'bg-gray-200 text-gray-400 cursor-not-allowed'
+              }`}
+            >
+              Agregar tiempo manual
+            </button>
+          </div>
+        )}
+      </div>
+
+      {/* Recent Entries */}
+      <div className="p-6">
+        <h3 className="text-sm font-medium text-gray-900 mb-3">Entradas recientes</h3>
+        
+        {recentEntries.length === 0 ? (
+          <div className="text-center py-8 text-gray-500">
+            <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
+            <p className="text-sm">No hay entradas recientes</p>
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {recentEntries.map((entry) => {
+              // 🎯 CAMBIO: Buscar por BC IDs
+              const project = assignments.jobs.find(j => j.bc_job_id === entry.bc_job_id);
+              const task = assignments.tasks.find(t => t.bc_task_id === entry.bc_task_id);
+              
+              return (
+                <div key={entry.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg group">
+                  <div className="flex items-center gap-3 flex-1">
+                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
+                    <div className="flex-1 min-w-0">
+                      <p className="text-sm font-medium text-gray-900 truncate">
+                        {entry.description}
+                      </p>
+                      <p className="text-xs text-gray-500">
+                        {project?.name} • {task?.description}
+                      </p>
+                    </div>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <span>{entry.date}</span>
+                      <span className="font-mono font-medium">
+                        {entry.hours.toFixed(2)}h
+                      </span>
+                    </div>
+                  </div>
+                  
+                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
+                    <button
+                      onClick={() => handleQuickStart(entry)}
+                      className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                      title="Usar para timer"
+                    >
+                      <Play className="w-4 h-4" />
+                    </button>
+                  </div>
+                </div>
+              );
+            })}
+          </div>
+        )}
+      </div>
     </div>
   );
 };
