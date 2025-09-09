@@ -356,16 +356,23 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                             )}
                             onBlur={() => handleCellBlur(task.bc_task_id, dateStr)}
                             className={`
-                              w-16 px-2 py-1 text-center text-sm border rounded
-                              focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-                              ${hasPendingChange 
-                                ? 'border-orange-300 bg-orange-50' 
-                                : 'border-gray-200'
-                              }
-                              ${value > 0 ? 'font-medium' : ''}
-                            `}
-                            placeholder="0"
-                          />
+							  w-16 px-2 py-1 text-center text-sm border rounded
+							  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
+							  ${hasPendingChange 
+								? 'border-orange-300 bg-orange-50' 
+								: (() => {
+									const existingEntry = timeEntries.find(e => e.bc_task_id === task.bc_task_id && e.date === dateStr);
+									return existingEntry?.bc_sync_status === 'local' ? 'border-orange-200 bg-orange-25' :
+										   existingEntry?.bc_sync_status === 'draft' ? 'border-blue-200 bg-blue-25' :
+										   existingEntry?.bc_sync_status === 'posted' ? 'border-green-200 bg-green-25' :
+										   existingEntry?.bc_sync_status === 'error' ? 'border-red-200 bg-red-25' :
+										   'border-gray-200';
+								  })()
+							  }
+							  ${value > 0 ? 'font-medium' : ''}
+							`}
+							placeholder="0"
+						/>
                         </td>
                       );
                     })}

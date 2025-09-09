@@ -40,8 +40,9 @@ class ApiService {
   }
 
   // ⏱️ TIME ENTRIES - UPDATED WITH PROPER TYPES
-  async getTimeEntries(from?: string, to?: string): Promise<TimeEntry[]> {
+  async getTimeEntries(companyId: string, from?: string, to?: string): Promise<TimeEntry[]> {
     const params = new URLSearchParams();
+    params.append('companyId', companyId);
     if (from) params.append('from', from);
     if (to) params.append('to', to);
     

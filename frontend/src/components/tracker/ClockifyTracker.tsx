@@ -67,27 +67,28 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
   }, [manualEntry.startTime, manualEntry.endTime, manualEntry.date]);
 
   const loadRecentEntries = useCallback(async () => {
-    try {
-      const today = new Date();
-      const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-      
-      const entries = await apiService.getTimeEntries(
-        weekAgo.toISOString().split('T')[0],
-        today.toISOString().split('T')[0]
-      );
-      
-      // Sort by date desc, then by id desc
-      const sorted = entries.sort((a, b) => {
-        const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
-        if (dateCompare !== 0) return dateCompare;
-        return b.id.localeCompare(a.id);
-      });
-      
-      setRecentEntries(sorted.slice(0, 5)); // Show last 5
-    } catch (error) {
-      console.error('Error loading recent entries:', error);
-    }
-  }, []);
+	  try {
+		const today = new Date();
+		const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
+		
+		const entries = await apiService.getTimeEntries(
+		  companyId, // ✅ AGREGAR companyId como primer parámetro
+		  weekAgo.toISOString().split('T')[0],
+		  today.toISOString().split('T')[0]
+		);
+		
+		// Sort by date desc, then by id desc
+		const sorted = entries.sort((a, b) => {
+		  const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
+		  if (dateCompare !== 0) return dateCompare;
+		  return b.id.localeCompare(a.id);
+		});
+		
+		setRecentEntries(sorted.slice(0, 5)); // Show last 5
+	  } catch (error) {
+		console.error('Error loading recent entries:', error);
+	  }
+	}, [companyId]);
 
   useEffect(() => {
     loadRecentEntries();
@@ -492,11 +493,25 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                       </p>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{entry.date}</span>
-                      <span className="font-mono font-medium">
-                        {entry.hours.toFixed(2)}h
-                      </span>
-                    </div>
+					  <span>{entry.date}</span>
+					  <span className="font-mono font-medium">
+						{entry.hours.toFixed(2)}h
+					  </span>
+					  
+					  {/* NUEVO: Badge de estado sync */}
+					  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+						entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
+						entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
+						entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
+						entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
+						'bg-gray-100 text-gray-700'
+					  }`}>
+						{entry.bc_sync_status === 'local' ? 'Local' :
+						 entry.bc_sync_status === 'draft' ? 'BC' :
+						 entry.bc_sync_status === 'posted' ? 'Posted' :
+						 entry.bc_sync_status === 'error' ? 'Error' : 'Unknown'}
+					  </span>
+					</div>
                   </div>
                   
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">

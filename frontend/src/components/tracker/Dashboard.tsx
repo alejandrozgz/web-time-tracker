@@ -73,12 +73,13 @@ const Dashboard: React.FC = () => {
       console.log('🔍 Dashboard - starting API calls...');
       
       const [jobsData, timeEntriesData] = await Promise.all([
-        apiService.getJobs(company.id),
-        apiService.getTimeEntries(
-          formatDate(currentWeek.start),
-          formatDate(currentWeek.end)
-        )
-      ]);
+		  apiService.getJobs(company.id),
+		  apiService.getTimeEntries(              // ✅ CAMBIAR ESTA LÍNEA
+			company.id,                           // ✅ AGREGAR companyId AQUÍ
+			formatDate(currentWeek.start),
+			formatDate(currentWeek.end)
+		  )
+		]);
 
       console.log('🔍 Dashboard - API calls completed');
       console.log('🔍 Dashboard - jobsData received:', jobsData);

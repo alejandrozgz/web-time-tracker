@@ -14,15 +14,14 @@ export class BusinessCentralClient {
   private tokenExpiry?: number;
 
   constructor(tenant: any, company: any) {
-    // ✅ URL CORREGIDA con ruta completa
-    this.baseUrl = `https://api.businesscentral.dynamics.com/v2.0/${tenant.bc_tenant_id}/${tenant.bc_environment}/api/timetracker/atp/v1.0`;
+    this.baseUrl = `https://api.businesscentral.dynamics.com/v2.0/${tenant.bc_tenant_id}/${tenant.bc_environment}/api/atp/timetracker/v1.0`;
     this.companyId = company.bc_company_id;
     
     // OAuth config from tenant
     this.clientId = tenant.bc_client_id;
     this.clientSecret = tenant.bc_client_secret;
     this.azureTenantId = tenant.bc_tenant_id;
-  }
+}
 
   private async getAccessToken(): Promise<string> {
     if (!this.clientId || !this.clientSecret || !this.azureTenantId) {
