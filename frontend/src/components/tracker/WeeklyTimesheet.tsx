@@ -1,7 +1,5 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
-import toast from 'react-hot-toast';
-import apiService from '../../services/api';
 import { TimeEntry, Assignment } from '../../types';
 
 interface WeeklyTimesheetProps {
@@ -12,26 +10,17 @@ interface WeeklyTimesheetProps {
 }
 
 interface TimeMatrix {
-  [taskBCId: string]: {
+  [taskKey: string]: {
     [date: string]: number;
   };
 }
 
-interface PendingChange {
-  taskBCId: string;
-  date: string;
-  hours: number;
-}
-
 const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({ 
   assignments, 
-  timeEntries, 
-  onUpdate,
-  companyId 
+  timeEntries 
 }) => {
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [timeMatrix, setTimeMatrix] = useState<TimeMatrix>({});
-  const [pendingChanges, setPendingChanges] = useState<{[key: string]: PendingChange}>({});
 
   // Get week dates
   const getWeekDates = (date: Date): Date[] => {
@@ -50,23 +39,24 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
   };
 
   const weekDates = getWeekDates(currentWeek);
-  const weekStart = weekDates[0].toISOString().split('T')[0];
-  const weekEnd = weekDates[6].toISOString().split('T')[0];
 
   // Build time matrix from entries
   useEffect(() => {
     const matrix: TimeMatrix = {};
     
+    console.log('🔍 Building time matrix with entries:', timeEntries);
+    
     timeEntries.forEach(entry => {
       const entryDate = entry.date;
-      const taskBCId = entry.bc_task_id;
+      const taskKey = `${entry.bc_job_id}-${entry.bc_task_id}`; // Clave compuesta
       
-      if (!matrix[taskBCId]) {
-        matrix[taskBCId] = {};
+      if (!matrix[taskKey]) {
+        matrix[taskKey] = {};
       }
-      matrix[taskBCId][entryDate] = entry.hours;
+      matrix[taskKey][entryDate] = (matrix[taskKey][entryDate] || 0) + entry.hours;
     });
     
+    console.log('🔍 Final matrix:', matrix);
     setTimeMatrix(matrix);
   }, [timeEntries]);
 
@@ -87,125 +77,31 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     setCurrentWeek(new Date());
   };
 
-  // Handle cell changes
-  const handleCellChange = (taskBCId: string, date: string, hours: number) => {
-    // Validate hours
-    if (hours < 0 || hours > 24) {
-      toast.error('Hours must be between 0 and 24');
-      return;
-    }
-
-    // Check daily total
-    const dailyTotal = assignments.tasks
-      .filter(task => task.bc_task_id !== taskBCId)
-      .reduce((sum, task) => {
-        return sum + (timeMatrix[task.bc_task_id]?.[date] || 0);
-      }, 0) + hours;
-
-    if (dailyTotal > 24) {
-      toast.error(`Daily total would exceed 24 hours. Total actual: ${(dailyTotal - hours).toFixed(2)}h`);
-      return;
-    }
-
-    setTimeMatrix(prev => ({
-      ...prev,
-      [taskBCId]: {
-        ...prev[taskBCId],
-        [date]: hours
-      }
-    }));
-
-    const changeKey = `${taskBCId}-${date}`;
-    setPendingChanges(prev => ({
-      ...prev,
-      [changeKey]: { taskBCId, date, hours }
-    }));
-  };
-
-  const handleCellBlur = async (taskBCId: string, date: string) => {
-    const changeKey = `${taskBCId}-${date}`;
-    const change = pendingChanges[changeKey];
-    
-    if (!change) return;
-
-    try {
-      const task = assignments.tasks.find(t => t.bc_task_id === taskBCId);
-      const job = assignments.jobs.find(j => j.id === task?.job_id);
-      const existingEntry = timeEntries.find(e => 
-        e.bc_task_id === taskBCId && e.date === date
-      );
-
-      if (change.hours === 0) {
-        if (existingEntry) {
-          await apiService.deleteTimeEntry(existingEntry.id);
-          toast.success('Entry deleted');
-        }
-      } else if (existingEntry) {
-        await apiService.updateTimeEntry(existingEntry.id, { 
-          hours: change.hours,
-          description: existingEntry.description || `Time for ${task?.description}`
-        });
-        toast.success('Entry updated');
-      } else {
-        // Creating new entry - description is mandatory
-        await apiService.createTimeEntry({
-          bc_job_id: job?.bc_job_id || '',
-          bc_task_id: taskBCId,
-          date: date,
-          hours: change.hours,
-          description: `Time logged for ${task?.description}`,
-          companyId
-        });
-        toast.success('Entry created');
-      }
-
-      // Remove from pending changes
-      setPendingChanges(prev => {
-        const { [changeKey]: _, ...rest } = prev;
-        return rest;
-      });
-
-      onUpdate();
-    } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Error saving entry');
-      
-      // Revert the change on error
-      setTimeMatrix(prev => {
-        const existingEntry = timeEntries.find(e => e.bc_task_id === taskBCId && e.date === date);
-        return {
-          ...prev,
-          [taskBCId]: {
-            ...prev[taskBCId],
-            [date]: existingEntry ? existingEntry.hours : 0
-          }
-        };
-      });
-
-      // Remove from pending changes
-      setPendingChanges(prev => {
-        const { [changeKey]: _, ...rest } = prev;
-        return rest;
-      });
-    }
-  };
-
-  // Calculate totals
-  const getTaskTotal = (taskBCId: string): number => {
+  // Calculate totals using task keys
+  const getTaskTotal = (job: any, task: any): number => {
+    const taskKey = `${job.bc_job_id}-${task.bc_task_id}`;
     return weekDates.reduce((total, date) => {
       const dateStr = date.toISOString().split('T')[0];
-      return total + (timeMatrix[taskBCId]?.[dateStr] || 0);
+      return total + (timeMatrix[taskKey]?.[dateStr] || 0);
     }, 0);
   };
 
   const getDayTotal = (date: string): number => {
-    return assignments.tasks.reduce((total, task) => {
-      return total + (timeMatrix[task.bc_task_id]?.[date] || 0);
+    return assignments.jobs.reduce((total, job) => {
+      const jobTasks = assignments.tasks.filter(task => task.job_id === job.id);
+      return total + jobTasks.reduce((taskTotal, task) => {
+        const taskKey = `${job.bc_job_id}-${task.bc_task_id}`;
+        return taskTotal + (timeMatrix[taskKey]?.[date] || 0);
+      }, 0);
     }, 0);
   };
 
   const getWeekTotal = (): number => {
-    return assignments.tasks.reduce((total, task) => {
-      return total + getTaskTotal(task.bc_task_id);
+    return assignments.jobs.reduce((total, job) => {
+      const jobTasks = assignments.tasks.filter(task => task.job_id === job.id);
+      return total + jobTasks.reduce((taskTotal, task) => {
+        return taskTotal + getTaskTotal(job, task);
+      }, 0);
     }, 0);
   };
 
@@ -228,8 +124,23 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     return date.toDateString() === today.toDateString();
   };
 
-  const isPendingChange = (taskBCId: string, date: string): boolean => {
-    return `${taskBCId}-${date}` in pendingChanges;
+  // Get sync status styling
+  const getSyncStatusStyling = (job: any, task: any, dateStr: string) => {
+    const existingEntry = timeEntries.find(e => 
+      e.bc_job_id === job.bc_job_id && 
+      e.bc_task_id === task.bc_task_id && 
+      e.date === dateStr
+    );
+    
+    if (!existingEntry) return 'border-gray-200 bg-gray-50';
+    
+    switch (existingEntry.bc_sync_status) {
+      case 'local': return 'border-orange-200 bg-orange-25';
+      case 'draft': return 'border-blue-200 bg-blue-25';
+      case 'posted': return 'border-green-200 bg-green-25';
+      case 'error': return 'border-red-200 bg-red-25';
+      default: return 'border-gray-200 bg-gray-50';
+    }
   };
 
   return (
@@ -319,22 +230,20 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                 {/* Tasks */}
                 {jobGroup.tasks.map((task) => (
                   <tr 
-                    key={task.bc_task_id}
-                    className="border-b border-gray-100 hover:bg-gray-50"
+                    key={`${jobGroup.job.bc_job_id}-${task.bc_task_id}`}
+                    className="border-b border-gray-100"
                   >
                     <td className="p-4">
                       <div className="text-sm font-medium text-gray-900">
-                        {task.bc_task_id}
-                      </div>
-                      <div className="text-xs text-gray-500 mt-1">
                         {task.description}
                       </div>
                     </td>
 
                     {weekDates.map((date, dayIndex) => {
                       const dateStr = date.toISOString().split('T')[0];
-                      const value = timeMatrix[task.bc_task_id]?.[dateStr] || 0;
-                      const hasPendingChange = isPendingChange(task.bc_task_id, dateStr);
+                      const taskKey = `${jobGroup.job.bc_job_id}-${task.bc_task_id}`;
+                      const value = timeMatrix[taskKey]?.[dateStr] || 0;
+                      const syncStyling = getSyncStatusStyling(jobGroup.job, task, dateStr);
                       
                       return (
                         <td
@@ -343,42 +252,21 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                             isToday(date) ? 'bg-blue-25' : ''
                           }`}
                         >
-                          <input
-                            type="number"
-                            step="0.1"
-                            min="0"
-                            max="24"
-                            value={value || ''}
-                            onChange={(e) => handleCellChange(
-                              task.bc_task_id,
-                              dateStr,
-                              parseFloat(e.target.value) || 0
-                            )}
-                            onBlur={() => handleCellBlur(task.bc_task_id, dateStr)}
+                          <div
                             className={`
-							  w-16 px-2 py-1 text-center text-sm border rounded
-							  focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent
-							  ${hasPendingChange 
-								? 'border-orange-300 bg-orange-50' 
-								: (() => {
-									const existingEntry = timeEntries.find(e => e.bc_task_id === task.bc_task_id && e.date === dateStr);
-									return existingEntry?.bc_sync_status === 'local' ? 'border-orange-200 bg-orange-25' :
-										   existingEntry?.bc_sync_status === 'draft' ? 'border-blue-200 bg-blue-25' :
-										   existingEntry?.bc_sync_status === 'posted' ? 'border-green-200 bg-green-25' :
-										   existingEntry?.bc_sync_status === 'error' ? 'border-red-200 bg-red-25' :
-										   'border-gray-200';
-								  })()
-							  }
-							  ${value > 0 ? 'font-medium' : ''}
-							`}
-							placeholder="0"
-						/>
+                              w-16 px-2 py-1 text-center text-sm border rounded mx-auto
+                              ${value > 0 ? 'font-medium text-gray-900' : 'text-gray-400'}
+                              ${syncStyling}
+                            `}
+                          >
+                            {value > 0 ? value.toFixed(1) : '-'}
+                          </div>
                         </td>
                       );
                     })}
 
                     <td className="p-4 text-center font-medium text-gray-900">
-                      {getTaskTotal(task.bc_task_id).toFixed(1)}h
+                      {getTaskTotal(jobGroup.job, task).toFixed(1)}h
                     </td>
                   </tr>
                 ))}
@@ -410,17 +298,6 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
           </tbody>
         </table>
       </div>
-
-      {/* Footer Info */}
-      {Object.keys(pendingChanges).length > 0 && (
-        <div className="p-4 bg-orange-50 border-t border-orange-200">
-          <div className="flex items-center gap-2 text-sm text-orange-700">
-            <div className="w-2 h-2 bg-orange-400 rounded-full"></div>
-            <span>{Object.keys(pendingChanges).length} unsaved changes</span>
-            <span className="text-orange-600">• Click outside cells to save</span>
-          </div>
-        </div>
-      )}
     </div>
   );
 };

@@ -133,9 +133,20 @@ export async function POST(
       throw new Error('Company not found');
     }
 
-    // Get user from JWT token (you'll need to implement this)
-    // For now, using a default resource_no
-    const resourceNo = validatedData.resource_no || 'R0001';
+    // Extract resource from JWT token
+    const authHeader = request.headers.get('authorization');
+    let resourceNo = 'R0010'; // fallback
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decodedToken = JSON.parse(Buffer.from(token, 'base64').toString());
+        resourceNo = decodedToken.resourceNo || 'R0010';
+        console.log('Using resource from token:', resourceNo);
+      } catch (e) {
+        console.log('Could not decode token, using fallback resource');
+      }
+    }
 
     // 🔍 Check for overlapping entries (same user, same day)
     const { data: existingEntries } = await supabaseAdmin

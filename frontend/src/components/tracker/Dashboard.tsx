@@ -185,18 +185,6 @@ const Dashboard: React.FC = () => {
         </div>
       </div>
 
-      {/* Debug Info - Remover en producción */}
-      <div className="bg-yellow-50 border border-yellow-200 rounded-lg p-4 text-sm">
-        <h3 className="font-medium text-yellow-800">Debug Info:</h3>
-        <p>Jobs: {assignments?.jobs?.length || 0}</p>
-        <p>Tasks: {assignments?.tasks?.length || 0}</p>
-        <p>Company: {company?.name || 'None'}</p>
-        <p>Force Update: {forceUpdate}</p>
-        {assignments?.jobs?.length > 0 && (
-          <p>First Job: {assignments.jobs[0].name}</p>
-        )}
-      </div>
-
       {/* Tab Content */}
       {activeTab === 'tracker' && (
         <div>

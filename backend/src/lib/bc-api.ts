@@ -191,7 +191,7 @@ export class BusinessCentralClient {
 
       // Get job tasks for the assigned jobs only
       const tasksFilter = uniqueJobNos.map(jobNo => `jobNo eq '${jobNo}'`).join(' or ');
-      const tasksEndpoint = `/companies(${this.companyId})/jobTasks?$filter=${tasksFilter} and jobTaskType eq 'Posting'`;
+	  const tasksEndpoint = `/companies(${this.companyId})/jobTasks?$filter=(${tasksFilter}) and jobTaskType eq 'Posting'`;
       const tasksData = await this.callBCApi(tasksEndpoint);
 
       const jobs = jobsData.value || [];

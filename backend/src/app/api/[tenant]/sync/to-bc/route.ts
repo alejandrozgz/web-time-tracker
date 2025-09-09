@@ -77,20 +77,20 @@ export async function POST(
 
         // 📤 Create Job Journal Line in BC
         const bcJournalLine = await bcClient.createJobJournalLine({
-          journalTemplateName: 'PROJECT',
-          journalBatchName: batchName,
-          lineNo: 0, // BC will auto-assign
-          jobNo: entry.job_bc_id,
-          jobTaskNo: entry.task_bc_id,
-          type: 'Resource',
-          no: entry.resource_no,
-          postingDate: entry.date,
-          quantity: parseFloat(entry.hours),
-          description: entry.description,
-          workTypeCode: 'NORMAL',
-          unitCost: 0,
-          unitPrice: 0
-        });
+		  journalTemplateName: 'PROJECT',
+		  journalBatchName: batchName,
+		  lineNo: 0,
+		  jobNo: entry.job_bc_id,
+		  jobTaskNo: entry.task_bc_id,
+		  type: 'Resource',
+		  no: entry.resource_no,
+		  postingDate: entry.date,
+		  quantity: parseFloat(entry.hours),
+		  description: entry.description,
+		  // workTypeCode eliminado - BC usará el valor por defecto
+		  unitCost: 0,
+		  unitPrice: 0
+		});
 
         // ✅ Update local status
         await supabaseAdmin

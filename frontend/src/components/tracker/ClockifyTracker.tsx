@@ -318,7 +318,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
             </button>
 
             {showProjectDropdown && (
-              <div className="absolute top-full left-0 mt-1 w-80 bg-white border border-gray-200 rounded-lg shadow-lg z-10">
+              <div className="absolute top-full left-0 mt-1 w-[700px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="p-3 border-b border-gray-100">
                   <h3 className="font-medium text-gray-900">Seleccionar Tarea</h3>
                 </div>
