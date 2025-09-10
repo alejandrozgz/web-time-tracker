@@ -109,6 +109,12 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
     return `${h}h ${m}m`;
   };
 
+  // 🎯 NUEVA FUNCIÓN: Formatear tiempo a HH:mm
+  const formatTimeHHMM = (timeStr: string | undefined): string => {
+    if (!timeStr) return '--:--';
+    return timeStr.slice(0, 5); // Toma solo HH:mm de HH:mm:ss
+  };
+
   const canStartTimer = (): boolean => {
     return description.trim() !== '' && selectedProject !== '' && selectedTask !== '';
   };
@@ -464,7 +470,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         )}
       </div>
 
-      {/* Recent Entries */}
+      {/* Recent Entries - CON HORARIOS MEJORADOS */}
       <div className="p-6">
         <h3 className="text-sm font-medium text-gray-900 mb-3">Entradas recientes</h3>
         
@@ -493,25 +499,32 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                       </p>
                     </div>
                     <div className="flex items-center gap-4 text-xs text-gray-500">
-					  <span>{entry.date}</span>
-					  <span className="font-mono font-medium">
-						{entry.hours.toFixed(2)}h
-					  </span>
-					  
-					  {/* NUEVO: Badge de estado sync */}
-					  <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-						entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
-						entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
-						entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
-						entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
-						'bg-gray-100 text-gray-700'
-					  }`}>
-						{entry.bc_sync_status === 'local' ? 'Local' :
-						 entry.bc_sync_status === 'draft' ? 'BC' :
-						 entry.bc_sync_status === 'posted' ? 'Posted' :
-						 entry.bc_sync_status === 'error' ? 'Error' : 'Unknown'}
-					  </span>
-					</div>
+                      <span>{entry.date}</span>
+                      
+                      {/* 🎯 NUEVO: Mostrar horarios inicio - fin */}
+                      <div className="text-right">
+                        <div className="font-mono text-gray-700">
+                          {formatTimeHHMM(entry.start_time)} - {formatTimeHHMM(entry.end_time)}
+                        </div>
+                        <div className="font-medium">
+                          {entry.hours.toFixed(2)}h total
+                        </div>
+                      </div>
+                      
+                      {/* Badge de estado sync */}
+                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                        entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
+                        entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
+                        entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
+                        entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
+                        'bg-gray-100 text-gray-700'
+                      }`}>
+                        {entry.bc_sync_status === 'local' ? 'Local' :
+                         entry.bc_sync_status === 'draft' ? 'BC' :
+                         entry.bc_sync_status === 'posted' ? 'Posted' :
+                         entry.bc_sync_status === 'error' ? 'Error' : 'Unknown'}
+                      </span>
+                    </div>
                   </div>
                   
                   <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
