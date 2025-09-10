@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import ClockifyTracker from './ClockifyTracker';
 import WeeklyTimesheet from './WeeklyTimesheet';
 import SyncButton from '../sync/SyncButton';
@@ -10,11 +11,6 @@ import { Assignment, TimeEntry } from '../../types';
 // Utility functions
 const formatDate = (date: Date): string => {
   return date.toISOString().split('T')[0];
-};
-
-const getDayName = (date: Date): string => {
-  const days = ['Dom', 'Lun', 'Mar', 'Mié', 'Jue', 'Vie', 'Sáb'];
-  return days[date.getDay()];
 };
 
 const getWeekDates = (date: Date) => {
@@ -32,6 +28,7 @@ const getWeekDates = (date: Date) => {
 };
 
 const Dashboard: React.FC = () => {
+  const { t } = useTranslation(['dashboard', 'common']);
   const { user, company } = useAuth();
   const [activeTab, setActiveTab] = useState<'tracker' | 'timesheet'>('tracker');
   const [assignments, setAssignments] = useState<Assignment>({ jobs: [], tasks: [] });
@@ -74,8 +71,8 @@ const Dashboard: React.FC = () => {
       
       const [jobsData, timeEntriesData] = await Promise.all([
 		  apiService.getJobs(company.id),
-		  apiService.getTimeEntries(              // ✅ CAMBIAR ESTA LÍNEA
-			company.id,                           // ✅ AGREGAR companyId AQUÍ
+		  apiService.getTimeEntries(
+			company.id,
 			formatDate(currentWeek.start),
 			formatDate(currentWeek.end)
 		  )
@@ -124,9 +121,10 @@ const Dashboard: React.FC = () => {
     setCurrentWeek(getWeekDates(newDate));
   };
 
+  // Tabs with translations
   const tabs = [
-    { id: 'tracker' as const, label: 'Tracker', icon: Play },
-    { id: 'timesheet' as const, label: 'Hoja de Tiempo', icon: Calendar }
+    { id: 'tracker' as const, label: t('common:navigation.time_tracker'), icon: Play },
+    { id: 'timesheet' as const, label: t('dashboard:charts.weekly_timesheet'), icon: Calendar }
   ];
 
   console.log('🔍 Dashboard - render, loading:', loading, 'jobs:', assignments?.jobs?.length || 0);
@@ -135,27 +133,27 @@ const Dashboard: React.FC = () => {
     return (
       <div className="flex justify-center items-center h-64">
         <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600" />
-        <span className="ml-2">Cargando proyectos...</span>
+        <span className="ml-2">{t('common:status.loading')}</span>
       </div>
     );
   }
 
   return (
     <div className="space-y-6">
-      {/* 🎯 DASHBOARD HEADER CON SYNC BUTTON */}
+      {/* Dashboard Header con Sync Button */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
         <div className="flex items-center justify-between mb-4">
           {/* Company Info */}
           <div>
             <h1 className="text-xl font-bold text-gray-900">
-              {company?.name || 'Dashboard'}
+              {company?.name || t('dashboard:title')}
             </h1>
             <p className="text-sm text-gray-500">
-              {user?.displayName} • {assignments.jobs.length} proyectos • {assignments.tasks.length} tareas
+              {user?.displayName} • {t('dashboard:summary.projects_count', { count: assignments.jobs.length })} • {t('dashboard:summary.tasks_count', { count: assignments.tasks.length })}
             </p>
           </div>
 
-          {/* 🚀 SYNC BUTTON */}
+          {/* Sync Button */}
           {company && (
             <SyncButton 
               companyId={company.id} 

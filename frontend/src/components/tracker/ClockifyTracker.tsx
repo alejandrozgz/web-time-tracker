@@ -1,5 +1,6 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Pause, Square, Clock } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import apiService from '../../services/api';
 import { Assignment, TimeEntry } from '../../types';
@@ -11,6 +12,8 @@ interface ClockifyTrackerProps {
 }
 
 const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate, companyId }) => {
+  const { t } = useTranslation(['tracker', 'common']);
+  
   const [trackingMode, setTrackingMode] = useState<'timer' | 'manual'>('timer');
   const [description, setDescription] = useState('');
   const [selectedProject, setSelectedProject] = useState('');
@@ -122,11 +125,11 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
   const handleStartTimer = () => {
     if (!canStartTimer()) {
       if (!description.trim()) {
-        toast.error('Debe ingresar una descripción');
+        toast.error(t('tracker:fields.description_required'));
         return;
       }
       if (!selectedTask) {
-        toast.error('Debe seleccionar una tarea');
+        toast.error(t('tracker:messages.select_task_required'));
         return;
       }
     }
@@ -134,12 +137,12 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
     setIsRunning(true);
     setStartTime(new Date());
     setElapsedTime(0);
-    toast.success('Timer iniciado');
+    toast.success(t('tracker:messages.timer_started'));
   };
 
   const handlePauseTimer = () => {
     setIsRunning(false);
-    toast.success('Timer pausado');
+    toast.success(t('tracker:messages.timer_paused'));
   };
 
   const handleStopTimer = async () => {
@@ -150,7 +153,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
     const totalHours = totalMs / (1000 * 60 * 60);
 
     if (totalHours < 0.01) {
-      toast.error('El tiempo mínimo es 1 minuto');
+      toast.error(t('tracker:messages.min_time'));
       return;
     }
 
@@ -170,7 +173,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         companyId
       });
 
-      toast.success(`${formatHours(totalHours)} agregado exitosamente`);
+      toast.success(t('tracker:messages.entry_added', { time: formatHours(totalHours) }));
 
       // Reset timer
       setIsRunning(false);
@@ -181,33 +184,33 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
       onUpdate();
       loadRecentEntries();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Error al guardar entrada');
+      toast.error(error.response?.data?.error || t('common:status.error'));
     }
   };
 
   const handleManualSubmit = async () => {
     if (!description.trim()) {
-      toast.error('La descripción es obligatoria');
+      toast.error(t('tracker:fields.description_required'));
       return;
     }
 
     if (!selectedProject || !selectedTask) {
-      toast.error('Debe seleccionar una tarea');
+      toast.error(t('tracker:messages.select_task_required'));
       return;
     }
 
     if (!manualEntry.startTime || !manualEntry.endTime) {
-      toast.error('Debe ingresar hora de inicio y fin');
+      toast.error(t('tracker:messages.time_required'));
       return;
     }
 
     if (manualEntry.calculatedHours <= 0) {
-      toast.error('La hora de fin debe ser posterior al inicio');
+      toast.error(t('tracker:messages.end_after_start'));
       return;
     }
 
     if (manualEntry.calculatedHours > 24) {
-      toast.error('Una entrada no puede exceder 24 horas');
+      toast.error(t('tracker:messages.max_time'));
       return;
     }
 
@@ -227,7 +230,10 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         companyId
       });
 
-      toast.success(`${formatHours(manualEntry.calculatedHours)} agregado para ${manualEntry.date}`);
+      toast.success(t('tracker:messages.entry_added_for_date', { 
+        time: formatHours(manualEntry.calculatedHours), 
+        date: manualEntry.date 
+      }));
       
       // Reset manual entry
       setManualEntry({
@@ -241,7 +247,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
       onUpdate();
       loadRecentEntries();
     } catch (error: any) {
-      toast.error(error.response?.data?.error || 'Error al guardar entrada');
+      toast.error(error.response?.data?.error || t('common:status.error'));
     }
   };
 
@@ -274,7 +280,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            ⏱️ Timer
+            ⏱️ {t('tracker:modes.timer')}
           </button>
           <button
             onClick={() => setTrackingMode('manual')}
@@ -284,7 +290,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                 : 'bg-gray-100 text-gray-600 hover:bg-gray-200'
             }`}
           >
-            🕐 Manual
+            🕐 {t('tracker:modes.manual')}
           </button>
         </div>
 
@@ -292,7 +298,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         <div className="mb-4">
           <input
             type="text"
-            placeholder="¿En qué estás trabajando? *"
+            placeholder={`${t('tracker:fields.description_placeholder')} *`}
             value={description}
             onChange={(e) => setDescription(e.target.value)}
             className={`w-full px-4 py-3 text-lg border-0 border-b-2 focus:outline-none placeholder-gray-400 ${
@@ -301,7 +307,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
             required
           />
           {!description.trim() && (
-            <p className="mt-1 text-xs text-red-500">* La descripción es obligatoria</p>
+            <p className="mt-1 text-xs text-red-500">* {t('tracker:fields.description_required')}</p>
           )}
         </div>
 
@@ -316,7 +322,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
               {selectedTaskData && selectedProjectData ? (
                 <span>{selectedProjectData.name} → {selectedTaskData.description}</span>
               ) : (
-                <span className="text-gray-500">Seleccionar tarea</span>
+                <span className="text-gray-500">{t('tracker:fields.select_task')}</span>
               )}
               <svg className="w-4 h-4" fill="currentColor" viewBox="0 0 20 20">
                 <path fillRule="evenodd" d="M5.293 7.293a1 1 0 011.414 0L10 10.586l3.293-3.293a1 1 0 111.414 1.414l-4 4a1 1 0 01-1.414 0l-4-4a1 1 0 010-1.414z" clipRule="evenodd" />
@@ -326,7 +332,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
             {showProjectDropdown && (
               <div className="absolute top-full left-0 mt-1 w-[700px] bg-white border border-gray-200 rounded-lg shadow-lg z-10">
                 <div className="p-3 border-b border-gray-100">
-                  <h3 className="font-medium text-gray-900">Seleccionar Tarea</h3>
+                  <h3 className="font-medium text-gray-900">{t('tracker:fields.select_task')}</h3>
                 </div>
                 {assignments.jobs.map(job => (
                   <div key={job.id} className="border-b border-gray-100 last:border-0">
@@ -381,7 +387,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                   }`}
                 >
                   <Play className="w-4 h-4" />
-                  Iniciar
+                  {t('tracker:actions.start_timer')}
                 </button>
               ) : (
                 <div className="flex items-center gap-2">
@@ -390,14 +396,14 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                     className="flex items-center gap-2 px-4 py-2 bg-yellow-500 text-white rounded-lg text-sm font-medium hover:bg-yellow-600 transition-colors"
                   >
                     <Pause className="w-4 h-4" />
-                    Pausar
+                    {t('tracker:actions.pause_timer')}
                   </button>
                   <button
                     onClick={handleStopTimer}
                     className="flex items-center gap-2 px-4 py-2 bg-red-500 text-white rounded-lg text-sm font-medium hover:bg-red-600 transition-colors"
                   >
                     <Square className="w-4 h-4" />
-                    Parar
+                    {t('tracker:actions.stop_timer')}
                   </button>
                 </div>
               )}
@@ -411,7 +417,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
             <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Fecha
+                  {t('tracker:fields.date')}
                 </label>
                 <input
                   type="date"
@@ -423,7 +429,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora inicio
+                  {t('tracker:fields.start_time')}
                 </label>
                 <input
                   type="time"
@@ -435,7 +441,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-1">
-                  Hora fin
+                  {t('tracker:fields.end_time')}
                 </label>
                 <input
                   type="time"
@@ -448,7 +454,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
             {manualEntry.calculatedHours > 0 && (
               <div className="flex items-center gap-2 text-sm text-gray-600">
-                <span>Tiempo calculado:</span>
+                <span>{t('tracker:fields.total_time')}:</span>
                 <span className="font-medium text-blue-600">
                   {formatHours(manualEntry.calculatedHours)}
                 </span>
@@ -464,20 +470,20 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                   : 'bg-gray-200 text-gray-400 cursor-not-allowed'
               }`}
             >
-              Agregar tiempo manual
+              {t('tracker:actions.add_manual')}
             </button>
           </div>
         )}
       </div>
 
-      {/* Recent Entries - CON HORARIOS MEJORADOS */}
+      {/* Recent Entries - CON HORARIOS MEJORADOS E i18n */}
       <div className="p-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">Entradas recientes</h3>
+        <h3 className="text-sm font-medium text-gray-900 mb-3">{t('tracker:recent_entries.title')}</h3>
         
         {recentEntries.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
-            <p className="text-sm">No hay entradas recientes</p>
+            <p className="text-sm">{t('tracker:recent_entries.no_entries')}</p>
           </div>
         ) : (
           <div className="space-y-2">
@@ -507,7 +513,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                           {formatTimeHHMM(entry.start_time)} - {formatTimeHHMM(entry.end_time)}
                         </div>
                         <div className="font-medium">
-                          {entry.hours.toFixed(2)}h total
+                          {t('tracker:recent_entries.total', { hours: entry.hours.toFixed(2) })}
                         </div>
                       </div>
                       
@@ -519,10 +525,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                         entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
                         'bg-gray-100 text-gray-700'
                       }`}>
-                        {entry.bc_sync_status === 'local' ? 'Local' :
-                         entry.bc_sync_status === 'draft' ? 'BC' :
-                         entry.bc_sync_status === 'posted' ? 'Posted' :
-                         entry.bc_sync_status === 'error' ? 'Error' : 'Unknown'}
+                        {t(`tracker:sync_status.${entry.bc_sync_status}`) || entry.bc_sync_status}
                       </span>
                     </div>
                   </div>
@@ -531,7 +534,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                     <button
                       onClick={() => handleQuickStart(entry)}
                       className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                      title="Usar para timer"
+                      title={t('tracker:actions.use_for_timer')}
                     >
                       <Play className="w-4 h-4" />
                     </button>

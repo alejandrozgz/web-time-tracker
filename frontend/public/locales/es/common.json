@@ -1,0 +1,53 @@
+{
+  "buttons": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar",
+    "back": "Volver",
+    "next": "Siguiente",
+    "previous": "Anterior",
+    "start": "Iniciar",
+    "stop": "Parar",
+    "pause": "Pausar",
+    "add": "Agregar",
+    "search": "Buscar",
+    "filter": "Filtrar",
+    "export": "Exportar",
+    "import": "Importar",
+    "refresh": "Refrescar"
+  },
+  "status": {
+    "loading": "Cargando...",
+    "saving": "Guardando...",
+    "success": "Éxito",
+    "error": "Error",
+    "warning": "Advertencia",
+    "info": "Información"
+  },
+  "time": {
+    "hours": "horas",
+    "minutes": "minutos",
+    "seconds": "segundos",
+    "days": "días",
+    "weeks": "semanas",
+    "months": "meses",
+    "today": "Hoy",
+    "yesterday": "Ayer",
+    "tomorrow": "Mañana"
+  },
+  "validation": {
+    "required": "Este campo es obligatorio",
+    "invalid_email": "Email inválido",
+    "min_length": "Mínimo {{count}} caracteres",
+    "max_length": "Máximo {{count}} caracteres"
+  },
+  "navigation": {
+    "dashboard": "Panel",
+    "time_tracker": "Control de Tiempo",
+    "reports": "Reportes",
+    "settings": "Configuración",
+    "profile": "Perfil",
+    "logout": "Cerrar Sesión"
+  }
+}

@@ -1,0 +1,19 @@
+{
+  "title": "Dashboard",
+  "summary": {
+    "today": "Today",
+    "this_week": "This Week",
+    "this_month": "This Month",
+    "total_hours": "Total Hours",
+    "daily_totals": "Daily Totals",
+    "projects_count": "{{count}} projects",
+    "projects_count_one": "{{count}} project",
+    "tasks_count": "{{count}} tasks",
+    "tasks_count_one": "{{count}} task"
+  },
+  "charts": {
+    "hours_per_day": "Hours per Day",
+    "project_distribution": "Project Distribution",
+    "weekly_timesheet": "Timesheet"
+  }
+}

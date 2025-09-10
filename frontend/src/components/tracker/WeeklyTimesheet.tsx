@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { ChevronLeft, ChevronRight, Calendar } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import { TimeEntry, Assignment } from '../../types';
 
 interface WeeklyTimesheetProps {
@@ -19,6 +20,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
   assignments, 
   timeEntries 
 }) => {
+  const { t, i18n } = useTranslation(['dashboard', 'common']);
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
   const [timeMatrix, setTimeMatrix] = useState<TimeMatrix>({});
 
@@ -112,11 +114,27 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
   })).filter(group => group.tasks.length > 0);
 
   const formatDate = (date: Date): string => {
-    return date.toLocaleDateString('en-US', { 
+    // Use current language for date formatting
+    const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+    return date.toLocaleDateString(locale, { 
       weekday: 'short', 
       month: 'short', 
       day: 'numeric' 
     });
+  };
+
+  const formatWeekRange = (startDate: Date, endDate: Date): string => {
+    const locale = i18n.language === 'es' ? 'es-ES' : 'en-US';
+    const startStr = startDate.toLocaleDateString(locale, { 
+      month: 'long', 
+      day: 'numeric' 
+    });
+    const endStr = endDate.toLocaleDateString(locale, { 
+      month: 'long', 
+      day: 'numeric', 
+      year: 'numeric' 
+    });
+    return `${startStr} - ${endStr}`;
   };
 
   const isToday = (date: Date): boolean => {
@@ -148,31 +166,28 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
-          <h2 className="text-lg font-semibold text-gray-900">Weekly Timesheet</h2>
+          <h2 className="text-lg font-semibold text-gray-900">
+            {t('dashboard:charts.weekly_timesheet', 'Weekly Timesheet')}
+          </h2>
           
           <div className="flex items-center gap-4">
             <div className="flex items-center gap-2">
               <button
                 onClick={previousWeek}
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                title={t('common:buttons.previous')}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
               
               <div className="text-sm font-medium text-gray-900 min-w-[200px] text-center">
-                {weekDates[0].toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  day: 'numeric' 
-                })} - {weekDates[6].toLocaleDateString('en-US', { 
-                  month: 'long', 
-                  day: 'numeric', 
-                  year: 'numeric' 
-                })}
+                {formatWeekRange(weekDates[0], weekDates[6])}
               </div>
               
               <button
                 onClick={nextWeek}
                 className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                title={t('common:buttons.next')}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
@@ -183,7 +198,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
               className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
             >
               <Calendar className="w-4 h-4" />
-              This Week
+              {t('dashboard:summary.this_week', 'This Week')}
             </button>
           </div>
         </div>
@@ -195,7 +210,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
           <thead>
             <tr className="border-b border-gray-200 bg-gray-50">
               <th className="text-left p-4 font-medium text-gray-900 min-w-[250px]">
-                Project / Task
+                {t('tracker:fields.project')} / {t('tracker:fields.task')}
               </th>
               {weekDates.map((date, index) => (
                 <th
@@ -210,7 +225,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                 </th>
               ))}
               <th className="text-center p-4 font-medium text-gray-900 min-w-[80px]">
-                Total
+                {t('tracker:fields.total_time', 'Total')}
               </th>
             </tr>
           </thead>
@@ -275,7 +290,9 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
 
             {/* Daily Totals Row */}
             <tr className="border-t-2 border-gray-300 bg-gray-50 font-medium">
-              <td className="p-4 text-gray-900">Daily Totals</td>
+              <td className="p-4 text-gray-900">
+                {t('dashboard:summary.daily_totals', 'Daily Totals')}
+              </td>
               {weekDates.map((date, index) => {
                 const dateStr = date.toISOString().split('T')[0];
                 const dayTotal = getDayTotal(dateStr);

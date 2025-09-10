@@ -1,0 +1,19 @@
+{
+  "title": "Panel de Control",
+  "summary": {
+    "today": "Hoy",
+    "this_week": "Esta semana",
+    "this_month": "Este mes",
+    "total_hours": "Horas totales",
+    "daily_totals": "Totales diarios",
+    "projects_count": "{{count}} proyectos",
+    "projects_count_one": "{{count}} proyecto",
+    "tasks_count": "{{count}} tareas",
+    "tasks_count_one": "{{count}} tarea"
+  },
+  "charts": {
+    "hours_per_day": "Horas por día",
+    "project_distribution": "Distribución por proyecto",
+    "weekly_timesheet": "Hoja de Tiempo"
+  }
+}

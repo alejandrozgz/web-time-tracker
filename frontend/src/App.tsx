@@ -6,6 +6,7 @@ import Login from './components/auth/Login';
 import Dashboard from './components/tracker/Dashboard';
 import TimeEntries from './components/tracker/TimeEntries';
 import Header from './components/ui/Header';
+import './i18n'; // 🎯 ESTA ES LA ÚNICA LÍNEA NUEVA
 
 const Layout: React.FC<{ children: React.ReactNode }> = ({ children }) => {
   return (

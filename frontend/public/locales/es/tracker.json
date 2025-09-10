@@ -1,0 +1,50 @@
+{
+  "title": "Control de Tiempo",
+  "modes": {
+    "timer": "Timer",
+    "manual": "Manual"
+  },
+  "fields": {
+    "description": "Descripción",
+    "description_placeholder": "¿En qué estás trabajando?",
+    "description_required": "La descripción es obligatoria",
+    "project": "Proyecto",
+    "task": "Tarea",
+    "select_project": "Seleccionar proyecto...",
+    "select_task": "Seleccionar tarea...",
+    "date": "Fecha",
+    "start_time": "Hora inicio",
+    "end_time": "Hora fin",
+    "total_time": "Tiempo total"
+  },
+  "actions": {
+    "start_timer": "Iniciar",
+    "stop_timer": "Parar",
+    "pause_timer": "Pausar",
+    "add_manual": "Agregar tiempo manual",
+    "use_for_timer": "Usar para timer"
+  },
+  "recent_entries": {
+    "title": "Entradas recientes",
+    "no_entries": "No hay entradas recientes",
+    "total": "{{hours}}h total"
+  },
+  "messages": {
+    "timer_started": "Timer iniciado",
+    "timer_paused": "Timer pausado",
+    "timer_stopped": "Timer detenido",
+    "entry_added": "{{time}} agregado exitosamente",
+    "entry_added_for_date": "{{time}} agregado para {{date}}",
+    "min_time": "El tiempo mínimo es 1 minuto",
+    "max_time": "Una entrada no puede exceder 24 horas",
+    "end_after_start": "La hora de fin debe ser posterior al inicio",
+    "select_task_required": "Debe seleccionar una tarea",
+    "time_required": "Debe ingresar hora de inicio y fin"
+  },
+  "sync_status": {
+    "local": "Local",
+    "draft": "BC",
+    "posted": "Posted",
+    "error": "Error"
+  }
+}
