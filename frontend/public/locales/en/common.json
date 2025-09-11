@@ -15,7 +15,10 @@
     "filter": "Filter",
     "export": "Export",
     "import": "Import",
-    "refresh": "Refresh"
+    "refresh": "Refresh",
+    "sync": "Sync",
+    "sync_to_bc": "Sync to BC",
+    "retry": "Retry Sync"
   },
   "status": {
     "loading": "Loading...",
@@ -49,5 +52,28 @@
     "settings": "Settings",
     "profile": "Profile",
     "logout": "Logout"
+  },
+  "sync": {
+    "title": "BC Synchronization",
+    "status": {
+      "syncing": "Syncing...",
+      "success": "Successfully synced",
+      "error": "Sync error",
+      "pending": "Pending",
+      "completed": "All synced"
+    },
+    "messages": {
+      "sync_started": "Sync started",
+      "sync_completed": "✅ {{count}} entries synced with Business Central",
+      "sync_failed": "⚠️ {{count}} entries failed",
+      "no_entries": "No pending entries to sync"
+    },
+    "badges": {
+      "local": "{{count}} local",
+      "modified": "{{count}} modified",
+      "errors": "{{count}} errors", 
+      "in_bc": "{{count}} in BC"
+    },
+    "pending_hours": "{{hours}}h pending"
   }
 }

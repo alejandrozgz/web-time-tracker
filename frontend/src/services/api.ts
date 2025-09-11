@@ -1,25 +1,45 @@
-import axios from 'axios';
+// File: frontend/src/services/api.ts (UPDATED)
+import axios, { AxiosInstance } from 'axios';
 import { LoginData, AuthResponse, Job, JobTask, TimeEntry, SyncResponse, SyncDashboard, CreateTimeEntryData } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-const TENANT = process.env.REACT_APP_TENANT || 'empresa-demo';
 
 class ApiService {
-  private client = axios.create({
-    baseURL: `${API_BASE_URL}/${TENANT}`,
-    headers: {
-      'Content-Type': 'application/json',
-    },
-  });
+  private client: AxiosInstance;
 
   constructor() {
-    this.client.interceptors.request.use((config) => {
-      const token = localStorage.getItem('auth-token');
-      if (token) {
-        config.headers.Authorization = `Bearer ${token}`;
-      }
-      return config;
+    this.client = axios.create({
+      baseURL: API_BASE_URL,
+      headers: {
+        'Content-Type': 'application/json',
+      },
     });
+
+    // ❌ REMOVER: El interceptor automático del localStorage
+    // this.client.interceptors.request.use((config) => {
+    //   const token = localStorage.getItem('auth-token');
+    //   if (token) {
+    //     config.headers.Authorization = `Bearer ${token}`;
+    //   }
+    //   return config;
+    // });
+  }
+
+  // 🏢 Configurar tenant dinámicamente
+  setTenant(tenantSlug: string): void {
+    this.client.defaults.baseURL = `${API_BASE_URL}/${tenantSlug}`;
+    console.log(`API configured for tenant: ${tenantSlug}`);
+  }
+
+  // 🔐 NUEVO: Configurar token manualmente
+  setAuthToken(token: string): void {
+    if (token) {
+      this.client.defaults.headers.common['Authorization'] = `Bearer ${token}`;
+      console.log('Auth token set');
+    } else {
+      delete this.client.defaults.headers.common['Authorization'];
+      console.log('Auth token cleared');
+    }
   }
 
   // 🔐 AUTHENTICATION
@@ -39,7 +59,7 @@ class ApiService {
     return response.data;
   }
 
-  // ⏱️ TIME ENTRIES - UPDATED WITH PROPER TYPES
+  // ⏱️ TIME ENTRIES
   async getTimeEntries(companyId: string, from?: string, to?: string): Promise<TimeEntry[]> {
     const params = new URLSearchParams();
     params.append('companyId', companyId);
@@ -50,7 +70,6 @@ class ApiService {
     return response.data.entries || [];
   }
 
-  // 🎯 UPDATED: Use CreateTimeEntryData interface
   async createTimeEntry(data: CreateTimeEntryData): Promise<TimeEntry> {
     const response = await this.client.post('/time-entries', data);
     return response.data.entry;
@@ -86,13 +105,11 @@ class ApiService {
     return response.data;
   }
 
-  // 📮 POST JOURNAL (FUTURO - Hacer entries inmutables)
   async postJournalBatch(batchName: string): Promise<SyncResponse> {
     const response = await this.client.post('/sync/post-journal', { batchName });
     return response.data;
   }
 
-  // 📊 SYNC STATUS
   async getSyncHistory(companyId: string, limit = 10): Promise<any[]> {
     const response = await this.client.get(`/sync/history?companyId=${companyId}&limit=${limit}`);
     return response.data.history || [];

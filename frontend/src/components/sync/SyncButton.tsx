@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Upload, AlertTriangle, CheckCircle, Clock, Loader } from 'lucide-react';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import apiService from '../../services/api';
 import { BCSyncStatus, SyncResponse, SyncDashboard } from '../../types';
@@ -10,6 +11,7 @@ interface SyncButtonProps {
 }
 
 const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) => {
+  const { t } = useTranslation(['common']);
   const [dashboard, setDashboard] = useState<SyncDashboard | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
@@ -33,7 +35,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
   // 🔄 Manejar sincronización
   const handleSync = async () => {
     if (!dashboard || (dashboard.local_entries + dashboard.modified_entries + dashboard.error_entries) === 0) {
-      toast.error('No hay entradas pendientes para sincronizar');
+      toast.error(t('common:sync.messages.no_entries'));
       return;
     }
 
@@ -44,18 +46,18 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       
       if (response.success) {
         toast.success(
-          `✅ ${response.synced_entries} entradas sincronizadas con Business Central`,
+          t('common:sync.messages.sync_completed', { count: response.synced_entries }),
           { duration: 4000 }
         );
         
         if (response.failed_entries > 0) {
           toast.error(
-            `⚠️ ${response.failed_entries} entradas fallaron`,
+            t('common:sync.messages.sync_failed', { count: response.failed_entries }),
             { duration: 6000 }
           );
         }
       } else {
-        toast.error(`❌ Error en sincronización: ${response.message}`);
+        toast.error(`${t('common:sync.status.error')}: ${response.message}`);
       }
 
       // Recargar dashboard y notificar
@@ -64,7 +66,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       
     } catch (error: any) {
       console.error('Sync error:', error);
-      toast.error(`❌ Error de sincronización: ${error.message}`);
+      toast.error(`${t('common:sync.status.error')}: ${error.message}`);
     } finally {
       setSyncing(false);
     }
@@ -76,7 +78,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       return (
         <div className="flex items-center gap-2 px-4 py-2 bg-gray-100 text-gray-500 rounded-lg">
           <Loader className="w-4 h-4 animate-spin" />
-          <span>Cargando...</span>
+          <span>{t('common:status.loading')}</span>
         </div>
       );
     }
@@ -92,7 +94,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       return (
         <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
           <CheckCircle className="w-4 h-4" />
-          <span>Todo sincronizado</span>
+          <span>{t('common:sync.status.completed')}</span>
         </div>
       );
     }
@@ -113,7 +115,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
             {syncing ? (
               <>
                 <Loader className="w-4 h-4 animate-spin" />
-                <span>Sincronizando...</span>
+                <span>{t('common:sync.status.syncing')}</span>
               </>
             ) : (
               <>
@@ -123,7 +125,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
                   <Upload className="w-4 h-4" />
                 )}
                 <span>
-                  {hasErrors ? 'Reintentar Sync' : 'Sincronizar con BC'}
+                  {hasErrors ? t('common:buttons.retry') : t('common:buttons.sync_to_bc')}
                 </span>
               </>
             )}
@@ -134,25 +136,25 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
         <div className="flex items-center gap-1 text-sm">
           {dashboard.local_entries > 0 && (
             <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-              {dashboard.local_entries} locales
+              {t('common:sync.badges.local', { count: dashboard.local_entries })}
             </span>
           )}
           
           {dashboard.modified_entries > 0 && (
             <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
-              {dashboard.modified_entries} modificadas
+              {t('common:sync.badges.modified', { count: dashboard.modified_entries })}
             </span>
           )}
           
           {dashboard.error_entries > 0 && (
             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
-              {dashboard.error_entries} errores
+              {t('common:sync.badges.errors', { count: dashboard.error_entries })}
             </span>
           )}
           
           {dashboard.draft_entries > 0 && (
             <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-              {dashboard.draft_entries} en BC
+              {t('common:sync.badges.in_bc', { count: dashboard.draft_entries })}
             </span>
           )}
         </div>
@@ -168,7 +170,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       {dashboard && dashboard.pending_hours > 0 && (
         <div className="text-sm text-gray-500">
           <Clock className="w-4 h-4 inline mr-1" />
-          {dashboard.pending_hours.toFixed(1)}h pendientes
+          {t('common:sync.pending_hours', { hours: dashboard.pending_hours.toFixed(1) })}
         </div>
       )}
     </div>
