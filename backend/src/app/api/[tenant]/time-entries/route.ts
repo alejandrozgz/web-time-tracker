@@ -83,9 +83,10 @@ export async function GET(
 
   } catch (error) {
     console.error('❌ Fetch time entries error:', error);
+	const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       error: 'Failed to fetch time entries',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }
@@ -210,7 +211,7 @@ export async function POST(
 
   } catch (error) {
     console.error('❌ Create time entry error:', error);
-    
+    const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     if (error instanceof z.ZodError) {
       return NextResponse.json({ 
         error: 'Validation failed',
@@ -220,7 +221,7 @@ export async function POST(
 
     return NextResponse.json({ 
       error: 'Failed to create time entry',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }
@@ -240,7 +241,7 @@ export async function PATCH(
       return NextResponse.json({ error: 'Entry ID required' }, { status: 400 });
     }
 
-    // 🔍 Verificar si la entry es editable
+    // Verificar si la entry es editable
     const { data: existingEntry, error: fetchError } = await supabaseAdmin
       .from('time_entries')
       .select('id, bc_sync_status, is_editable, company_id')
@@ -251,14 +252,14 @@ export async function PATCH(
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
     }
 
-    // ❌ No permitir edición si está posted
+    // No permitir edición si está posted
     if (!existingEntry.is_editable || existingEntry.bc_sync_status === 'posted') {
       return NextResponse.json({ 
         error: 'Cannot modify entry: already posted in Business Central' 
       }, { status: 400 });
     }
 
-    // 🔄 Partial validation for updates
+    // Partial validation for updates
     const allowedFields = ['hours', 'description', 'start_time', 'end_time', 'bc_job_id', 'bc_task_id'];
     const filteredData = Object.keys(updateData)
       .filter(key => allowedFields.includes(key))
@@ -267,7 +268,7 @@ export async function PATCH(
         return obj;
       }, {} as any);
 
-    // 📝 Actualizar entry
+    // Actualizar entry
     const { data: updatedEntry, error } = await supabaseAdmin
       .from('time_entries')
       .update({
@@ -288,9 +289,10 @@ export async function PATCH(
 
   } catch (error) {
     console.error('❌ Update time entry error:', error);
+	const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       error: 'Failed to update time entry',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }
@@ -342,9 +344,10 @@ export async function DELETE(
 
   } catch (error) {
     console.error('❌ Delete time entry error:', error);
+	const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     return NextResponse.json({ 
       error: 'Failed to delete time entry',
-      details: error.message 
+      details: errorMessage 
     }, { status: 500 });
   }
 }
