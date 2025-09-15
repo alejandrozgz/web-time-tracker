@@ -129,12 +129,13 @@ export class BusinessCentralClient {
       return data;
       
     } catch (error) {
-      const duration = Date.now() - startTime;
-      console.error('❌ BC API Call Failed:', error.message);
-      console.error('⏱️  Failed after:', duration + 'ms');
-      console.error('🔚 ===== END BC API CALL (ERROR) =====\n');
-      throw error;
-    }
+	  const duration = Date.now() - startTime;
+	  const errorMessage = error instanceof Error ? error.message : 'Unknown error';
+	  console.error('❌ BC API Call Failed:', errorMessage);  // ✅ CORRECTO
+	  console.error('⏱️ Failed after:', duration + 'ms');
+	  console.error('🔚 ===== END BC API CALL (ERROR) =====\n');
+	  throw error;
+	}
   }
 
   async validateResourceCredentials(username: string, password: string) {
@@ -174,8 +175,8 @@ export class BusinessCentralClient {
       console.log(`Found ${data.value.length} job planning lines for resource ${resourceNo}`);
 
       // Extract unique job numbers AND job task numbers where the resource is assigned
-      const uniqueJobNos = [...new Set(data.value.map(line => line.jobNo))];
-      const assignedTaskKeys = new Set(data.value.map(line => `${line.jobNo}-${line.jobTaskNo}`));
+		const uniqueJobNos = [...new Set(data.value.map((line: any) => line.jobNo))];
+		const assignedTaskKeys = new Set(data.value.map((line: any) => `${line.jobNo}-${line.jobTaskNo}`));
       
       console.log('Unique job numbers:', uniqueJobNos);
       console.log('Assigned task keys:', Array.from(assignedTaskKeys));
@@ -198,10 +199,10 @@ export class BusinessCentralClient {
       
       // Filter tasks to only show tasks where the resource is actually assigned
       const allTasks = tasksData.value || [];
-      const assignedTasks = allTasks.filter(task => {
-        const taskKey = `${task.jobNo}-${task.jobTaskNo}`;
-        return assignedTaskKeys.has(taskKey);
-      });
+      const assignedTasks = allTasks.filter((task: any) => {
+		  const taskKey = `${task.jobNo}-${task.jobTaskNo}`;
+		  return assignedTaskKeys.has(taskKey);
+		});
 
       console.log(`Retrieved ${jobs.length} assigned jobs and ${assignedTasks.length}/${allTasks.length} assigned tasks`);
 

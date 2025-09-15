@@ -2,6 +2,7 @@
 import React from 'react';
 import { LogOut, User, Building2, Clock } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
+import { useParams } from 'react-router-dom'; // ✅ AGREGAR
 import { useAuth } from '../../context/AuthContext';
 import LanguageSelector from './LanguageSelector';
 
@@ -11,7 +12,8 @@ interface HeaderProps {
 
 const Header: React.FC<HeaderProps> = () => {
   const { t } = useTranslation('common');
-  const { user, tenant, company, logout } = useAuth();
+  const { user, company, logout } = useAuth();
+  const { tenantSlug } = useParams<{ tenantSlug: string }>(); // ✅ AGREGAR
 
   return (
     <header className="bg-white shadow-sm border-b border-gray-200">
@@ -31,7 +33,6 @@ const Header: React.FC<HeaderProps> = () => {
               </div>
             </div>
           </div>
-
           {/* Center - Company info (desktop) */}
           <div className="hidden md:flex items-center space-x-2 bg-gray-50 px-3 py-2 rounded-lg">
             <Building2 className="h-4 w-4 text-gray-600" />
@@ -39,15 +40,13 @@ const Header: React.FC<HeaderProps> = () => {
               {company?.name || 'No Company'}
             </span>
             <span className="text-xs text-gray-500">
-              ({tenant?.slug})
+              ({tenantSlug}) {/* ✅ CAMBIAR DE tenant?.slug A tenantSlug */}
             </span>
           </div>
-
           {/* Right side - Language, User, Logout */}
           <div className="flex items-center space-x-4">
             {/* Language Selector */}
             <LanguageSelector />
-
             {/* User info (desktop) */}
             <div className="hidden md:flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-600" />
@@ -58,7 +57,6 @@ const Header: React.FC<HeaderProps> = () => {
                 ({user?.resourceNo})
               </span>
             </div>
-
             {/* Logout button */}
             <button
               onClick={logout}
@@ -70,7 +68,6 @@ const Header: React.FC<HeaderProps> = () => {
             </button>
           </div>
         </div>
-
         {/* Mobile info row */}
         <div className="md:hidden pb-3">
           <div className="flex items-center justify-between">

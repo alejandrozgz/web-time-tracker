@@ -99,7 +99,7 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
     apiService.setAuthToken('');
     
     // Redirigir al login del mismo tenant
-    navigate(`/time-tracker/${tenantSlug}`);
+    navigate(`/${tenantSlug}`);
   };
 
   return (

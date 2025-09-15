@@ -1,4 +1,4 @@
-// File: frontend/src/App.tsx (UPDATED)
+// File: frontend/src/App.tsx
 import React from 'react';
 import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster } from 'react-hot-toast';
@@ -10,14 +10,30 @@ const App: React.FC = () => {
     <Router>
       <div className="App">
         <Routes>
-          {/* Ruta raíz redirige a tenant por defecto */}
-          <Route path="/" element={<Navigate to="/time-tracker/silki" replace />} />
+          {/* Ruta raíz redirige al sitio principal */}
+          <Route 
+            path="/" 
+            element={
+              <Navigate 
+                to="https://atpdynamicssolutions.com" 
+                replace 
+              />
+            } 
+          />
           
-          {/* Rutas time-tracker con tenant slug */}
-          <Route path="/time-tracker/:tenantSlug/*" element={<TenantApp />} />
+          {/* Rutas con tenant slug */}
+          <Route path="/:tenantSlug/*" element={<TenantApp />} />
           
-          {/* Fallback */}
-          <Route path="*" element={<Navigate to="/time-tracker/silki" replace />} />
+          {/* Fallback - también redirige al sitio principal */}
+          <Route 
+            path="*" 
+            element={
+              <Navigate 
+                to="https://atpdynamicssolutions.com" 
+                replace 
+              />
+            } 
+          />
         </Routes>
         
         <Toaster

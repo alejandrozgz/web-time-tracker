@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, User, Lock, LogIn, Building2 } from 'lucide-react';
+import { useParams } from 'react-router-dom';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
 import apiService from '../../services/api';
@@ -7,6 +8,7 @@ import { Company } from '../../types';
 
 const Login: React.FC = () => {
   const { login } = useAuth();
+  const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const [companies, setCompanies] = useState<Company[]>([]);
   const [formData, setFormData] = useState({
     username: '',
@@ -78,7 +80,7 @@ const Login: React.FC = () => {
             Integrado con Microsoft Dynamics 365 Business Central
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            Tenant: <span className="font-medium">empresa-demo</span>
+            Tenant: <span className="font-medium">{tenantSlug}</span>
           </p>
         </div>
 
