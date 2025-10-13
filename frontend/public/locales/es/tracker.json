@@ -42,9 +42,9 @@
     "time_required": "Debe ingresar hora de inicio y fin"
   },
   "sync_status": {
-    "local": "Local",
-    "draft": "BC",
-    "posted": "Posted",
+    "local": "No Sincronizado",
+    "draft": "Sincronizado",
+    "posted": "Registrado",
     "error": "Error"
   }
 }

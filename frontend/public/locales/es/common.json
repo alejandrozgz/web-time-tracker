@@ -64,8 +64,8 @@
     },
     "messages": {
       "sync_started": "Sincronización iniciada",
-      "sync_completed": "✅ {{count}} entradas sincronizadas con Business Central",
-      "sync_failed": "⚠️ {{count}} entradas fallaron",
+      "sync_completed": "{{count}} entradas sincronizadas con Business Central",
+      "sync_failed": "{{count}} entradas fallaron",
       "no_entries": "No hay entradas pendientes para sincronizar"
     },
     "badges": {
