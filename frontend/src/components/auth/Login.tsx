@@ -1,12 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import { Clock, User, Lock, LogIn, Building2 } from 'lucide-react';
 import { useParams } from 'react-router-dom';
+import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import { useAuth } from '../../context/AuthContext';
+import LanguageSelector from '../ui/LanguageSelector';
 import apiService from '../../services/api';
 import { Company } from '../../types';
 
 const Login: React.FC = () => {
+  const { t } = useTranslation(['auth', 'common']);
   const { login } = useAuth();
   const { tenantSlug } = useParams<{ tenantSlug: string }>();
   const [companies, setCompanies] = useState<Company[]>([]);
@@ -31,7 +34,7 @@ const Login: React.FC = () => {
         setFormData(prev => ({ ...prev, companyId: companiesData[0].id }));
       }
     } catch (error) {
-      toast.error('Error al cargar empresas');
+      toast.error(t('errors.load_companies'));
       console.error('Error loading companies:', error);
     } finally {
       setLoadingCompanies(false);
@@ -42,7 +45,7 @@ const Login: React.FC = () => {
     e.preventDefault();
     
     if (!formData.username || !formData.password || !formData.companyId) {
-      toast.error('Por favor completa todos los campos');
+      toast.error(t('errors.complete_fields'));
       return;
     }
 
@@ -50,9 +53,9 @@ const Login: React.FC = () => {
 
     try {
       await login(formData.username, formData.password, formData.companyId);
-      toast.success('¡Inicio de sesión exitoso!');
+      toast.success(t('success.login'));
     } catch (error: any) {
-      toast.error(error.message || 'Error de autenticación');
+      toast.error(error.message || t('errors.authentication'));
     } finally {
       setIsLoading(false);
     }
@@ -69,18 +72,23 @@ const Login: React.FC = () => {
   return (
     <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
       <div className="max-w-md w-full space-y-8">
+        {/* Language Selector - Top Right */}
+        <div className="flex justify-end">
+          <LanguageSelector />
+        </div>
+
         <div className="text-center">
           <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
             <Clock className="h-6 w-6 text-white" />
           </div>
           <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
-            Time Tracker
+            {t('title')}
           </h2>
           <p className="mt-2 text-sm text-gray-600">
-            Integrado con Microsoft Dynamics 365 Business Central
+            {t('subtitle')}
           </p>
           <p className="mt-1 text-xs text-gray-500">
-            Tenant: <span className="font-medium">{tenantSlug}</span>
+            {t('tenant')}: <span className="font-medium">{tenantSlug}</span>
           </p>
         </div>
 
@@ -88,7 +96,7 @@ const Login: React.FC = () => {
           <div className="space-y-4">
             <div>
               <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
-                Empresa *
+                {t('fields.company')} *
               </label>
               <div className="relative">
                 <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -99,7 +107,7 @@ const Login: React.FC = () => {
                   className="appearance-none block w-full pl-12 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
-                  <option value="">Selecciona una empresa...</option>
+                  <option value="">{t('placeholders.select_company')}</option>
                   {companies.map(company => (
                     <option key={company.id} value={company.id}>
                       {company.name}
@@ -111,7 +119,7 @@ const Login: React.FC = () => {
 
             <div>
               <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
-                Usuario *
+                {t('fields.username')} *
               </label>
               <div className="relative">
                 <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -121,7 +129,7 @@ const Login: React.FC = () => {
                   value={formData.username}
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
                   className="appearance-none block w-full px-12 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="demo"
+                  placeholder={t('placeholders.username')}
                   required
                 />
               </div>
@@ -129,7 +137,7 @@ const Login: React.FC = () => {
 
             <div>
               <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
-                Contraseña *
+                {t('fields.password')} *
               </label>
               <div className="relative">
                 <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
@@ -139,7 +147,7 @@ const Login: React.FC = () => {
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
                   className="appearance-none block w-full px-12 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
-                  placeholder="123"
+                  placeholder={t('placeholders.password')}
                   required
                 />
               </div>
@@ -157,7 +165,7 @@ const Login: React.FC = () => {
               ) : (
                 <>
                   <LogIn className="h-5 w-5 mr-2" />
-                  Iniciar Sesión
+                  {t('buttons.login')}
                 </>
               )}
             </button>
