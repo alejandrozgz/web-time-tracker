@@ -1,6 +1,19 @@
 // File: frontend/src/services/api.ts (UPDATED)
 import axios, { AxiosInstance } from 'axios';
-import { LoginData, AuthResponse, Job, JobTask, TimeEntry, SyncResponse, SyncDashboard, CreateTimeEntryData } from '../types';
+import {
+  LoginData,
+  AuthResponse,
+  Job,
+  JobTask,
+  TimeEntry,
+  SyncResponse,
+  SyncDashboard,
+  CreateTimeEntryData,
+  BCSyncLog,
+  SyncLogFilters,
+  SyncStatistics,
+  SyncActivity
+} from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
 
@@ -113,6 +126,41 @@ class ApiService {
   async getSyncHistory(companyId: string, limit = 10): Promise<any[]> {
     const response = await this.client.get(`/sync/history?companyId=${companyId}&limit=${limit}`);
     return response.data.history || [];
+  }
+
+  // 📋 SYNC LOGS METHODS
+  async getSyncLogs(companyId: string, filters?: SyncLogFilters): Promise<{ logs: BCSyncLog[]; count: number; limit: number; offset: number }> {
+    const params = new URLSearchParams();
+    params.append('companyId', companyId);
+
+    if (filters?.operation_type) params.append('operation_type', filters.operation_type);
+    if (filters?.log_level) params.append('log_level', filters.log_level);
+    if (filters?.date_from) params.append('date_from', filters.date_from);
+    if (filters?.date_to) params.append('date_to', filters.date_to);
+    if (filters?.limit) params.append('limit', filters.limit.toString());
+    if (filters?.offset) params.append('offset', filters.offset.toString());
+
+    const response = await this.client.get(`/sync/logs?${params}`);
+    return response.data;
+  }
+
+  async getSyncStatistics(companyId: string, dateFrom?: string, dateTo?: string): Promise<SyncStatistics> {
+    const params = new URLSearchParams();
+    params.append('companyId', companyId);
+    if (dateFrom) params.append('date_from', dateFrom);
+    if (dateTo) params.append('date_to', dateTo);
+
+    const response = await this.client.get(`/sync/statistics?${params}`);
+    return response.data;
+  }
+
+  async getSyncActivity(companyId: string, hours: number = 24): Promise<{ activity: SyncActivity[]; hours: number }> {
+    const params = new URLSearchParams();
+    params.append('companyId', companyId);
+    params.append('hours', hours.toString());
+
+    const response = await this.client.get(`/sync/activity?${params}`);
+    return response.data;
   }
 }
 

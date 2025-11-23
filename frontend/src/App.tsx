@@ -5,38 +5,77 @@ import { Toaster } from 'react-hot-toast';
 import TenantApp from './components/tenant/TenantApp';
 import './i18n';
 
+// Admin Portal Components
+import { AdminAuthProvider } from './contexts/AdminAuthContext';
+import AdminLogin from './components/admin/AdminLogin';
+import ProtectedAdminRoute from './components/admin/ProtectedAdminRoute';
+import AdminLayout from './components/admin/AdminLayout';
+import AdminDashboard from './components/admin/AdminDashboard';
+import TenantsManager from './components/admin/TenantsManager';
+import CompaniesManager from './components/admin/CompaniesManager';
+import TimeEntriesViewer from './components/admin/TimeEntriesViewer';
+import AdminSyncLogsViewer from './components/admin/AdminSyncLogsViewer';
+import { useAdminAuth } from './contexts/AdminAuthContext';
+
+// Wrapper component to use the hook
+const AdminLoginWrapper: React.FC = () => {
+  const { login } = useAdminAuth();
+  return <AdminLogin onLogin={login} />;
+};
+
 const App: React.FC = () => {
   return (
     <Router>
-      <div className="App">
-        <Routes>
+      <AdminAuthProvider>
+        <div className="App">
+          <Routes>
           {/* Ruta raíz redirige al sitio principal */}
-          <Route 
-            path="/" 
+          <Route
+            path="/"
             element={
-              <Navigate 
-                to="https://atpdynamicssolutions.com" 
-                replace 
+              <Navigate
+                to="https://atpdynamicssolutions.com"
+                replace
               />
-            } 
+            }
           />
-          
+
+          {/* PORTAL DE ADMINISTRADOR */}
+          {/* Login de Admin */}
+          <Route path="/admin/login" element={<AdminLoginWrapper />} />
+
+          {/* Rutas protegidas de Admin */}
+          <Route
+            path="/admin"
+            element={
+              <ProtectedAdminRoute>
+                <AdminLayout />
+              </ProtectedAdminRoute>
+            }
+          >
+            <Route index element={<AdminDashboard />} />
+            <Route path="tenants" element={<TenantsManager />} />
+            <Route path="companies" element={<CompaniesManager />} />
+            <Route path="time-entries" element={<TimeEntriesViewer />} />
+            <Route path="sync-logs" element={<AdminSyncLogsViewer />} />
+          </Route>
+
           {/* Rutas con tenant slug */}
           <Route path="/:tenantSlug/*" element={<TenantApp />} />
-          
+
           {/* Fallback - también redirige al sitio principal */}
-          <Route 
-            path="*" 
+          <Route
+            path="*"
             element={
-              <Navigate 
-                to="https://atpdynamicssolutions.com" 
-                replace 
+              <Navigate
+                to="https://atpdynamicssolutions.com"
+                replace
               />
-            } 
+            }
           />
-        </Routes>
-        
-        <Toaster
+          </Routes>
+
+          <Toaster
           position="top-right"
           toastOptions={{
             duration: 4000,
@@ -61,8 +100,9 @@ const App: React.FC = () => {
               },
             },
           }}
-        />
-      </div>
+          />
+        </div>
+      </AdminAuthProvider>
     </Router>
   );
 };

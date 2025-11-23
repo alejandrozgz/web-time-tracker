@@ -121,6 +121,76 @@ export interface SyncDashboard {
   pending_hours: number;
 }
 
+// 📋 SYNC LOG TYPES
+export enum SyncLogLevel {
+  INFO = 'info',
+  WARNING = 'warning',
+  ERROR = 'error',
+  SUCCESS = 'success'
+}
+
+export enum SyncOperationType {
+  SYNC_TO_BC = 'sync_to_bc',
+  POST_BATCH = 'post_batch',
+  FETCH_FROM_BC = 'fetch_from_bc',
+  RETRY = 'retry'
+}
+
+export interface BCSyncLog {
+  id: string;
+  tenant_id: string;
+  company_id: string;
+  operation_type: SyncOperationType;
+  batch_name?: string;
+  batch_id?: string;
+  time_entry_id?: string;
+  log_level: SyncLogLevel;
+  message: string;
+  details?: Record<string, any>;
+  entries_processed?: number;
+  entries_succeeded?: number;
+  entries_failed?: number;
+  total_hours?: number;
+  duration_ms?: number;
+  user_id?: string;
+  resource_no?: string;
+  bc_journal_id?: string;
+  bc_error_code?: string;
+  bc_error_message?: string;
+  created_at: string;
+}
+
+export interface SyncLogFilters {
+  operation_type?: SyncOperationType;
+  log_level?: SyncLogLevel;
+  date_from?: string;
+  date_to?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface SyncStatistics {
+  total_operations: number;
+  successful_operations: number;
+  failed_operations: number;
+  total_entries_processed: number;
+  total_entries_succeeded: number;
+  total_entries_failed: number;
+  total_hours: number;
+  avg_duration_ms: number;
+  last_sync_at?: string;
+  errors_by_code: Record<string, number>;
+}
+
+export interface SyncActivity {
+  hour_start: string;
+  total_syncs: number;
+  successful_syncs: number;
+  failed_syncs: number;
+  entries_synced: number;
+  hours_synced: number;
+}
+
 export interface Assignment {
   jobs: Job[];
   tasks: JobTask[];
@@ -137,4 +207,170 @@ export interface AuthResponse {
   user: User;
   tenant: Tenant;
   company: Company;
+}
+
+// ======================================
+// ADMIN PORTAL TYPES
+// ======================================
+
+// Full Tenant interface for admin operations
+export interface TenantFull {
+  id: string;
+  slug: string;
+  name: string;
+  bc_base_url: string;
+  bc_environment: string;
+  bc_tenant_id?: string;
+  bc_client_id?: string;
+  bc_client_secret?: string;
+  oauth_enabled: boolean;
+  settings?: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+}
+
+export interface CreateTenantData {
+  slug: string;
+  name: string;
+  bc_base_url: string;
+  bc_environment?: string;
+  bc_tenant_id?: string;
+  bc_client_id?: string;
+  bc_client_secret?: string;
+  oauth_enabled?: boolean;
+  settings?: Record<string, any>;
+}
+
+export interface UpdateTenantData {
+  name?: string;
+  bc_base_url?: string;
+  bc_environment?: string;
+  bc_tenant_id?: string;
+  bc_client_id?: string;
+  bc_client_secret?: string;
+  oauth_enabled?: boolean;
+  settings?: Record<string, any>;
+  is_active?: boolean;
+}
+
+// Resource (User) interface for admin
+export interface ResourceFull {
+  id: string;
+  tenant_id: string;
+  company_id: string;
+  resource_no: string;
+  display_name: string;
+  web_username?: string;
+  permissions?: Record<string, any>;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  tenant_name?: string;
+  company_name?: string;
+}
+
+export interface CreateResourceData {
+  tenant_id: string;
+  company_id: string;
+  resource_no: string;
+  display_name: string;
+  web_username?: string;
+  web_password?: string;
+  permissions?: Record<string, any>;
+}
+
+export interface UpdateResourceData {
+  display_name?: string;
+  web_username?: string;
+  web_password?: string;
+  permissions?: Record<string, any>;
+  is_active?: boolean;
+}
+
+// Company interface for admin
+export interface CompanyFull {
+  id: string;
+  tenant_id: string;
+  bc_company_id: string;
+  name: string;
+  bc_web_service_url?: string;
+  is_active: boolean;
+  created_at: string;
+  updated_at: string;
+  // Joined data
+  tenant_name?: string;
+  tenant_slug?: string;
+}
+
+export interface CreateCompanyData {
+  tenant_id: string;
+  bc_company_id: string;
+  name: string;
+  bc_web_service_url?: string;
+}
+
+export interface UpdateCompanyData {
+  name?: string;
+  bc_web_service_url?: string;
+  is_active?: boolean;
+}
+
+// Time Entry for admin (with all relations)
+export interface TimeEntryAdmin extends TimeEntry {
+  tenant_id?: string;
+  company_id?: string;
+  tenant_name?: string;
+  company_name?: string;
+  resource_display_name?: string;
+}
+
+// Admin dashboard statistics
+export interface AdminDashboardStats {
+  total_tenants: number;
+  active_tenants: number;
+  total_companies: number;
+  total_users: number;
+  active_users: number;
+  total_time_entries: number;
+  total_hours_tracked: number;
+  entries_by_status: {
+    local: number;
+    draft: number;
+    posted: number;
+    error: number;
+    modified: number;
+  };
+  recent_syncs: number;
+  failed_syncs: number;
+}
+
+// Filters for admin queries
+export interface AdminTimeEntryFilters {
+  tenant_id?: string;
+  company_id?: string;
+  resource_no?: string;
+  bc_sync_status?: string;
+  date_from?: string;
+  date_to?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminResourceFilters {
+  tenant_id?: string;
+  company_id?: string;
+  is_active?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
+}
+
+export interface AdminCompanyFilters {
+  tenant_id?: string;
+  is_active?: boolean;
+  search?: string;
+  limit?: number;
+  offset?: number;
 }
