@@ -89,7 +89,7 @@ class ApiService {
   }
 
   async updateTimeEntry(id: string, data: Partial<Omit<TimeEntry, 'id' | 'created_at' | 'bc_journal_id' | 'bc_batch_name' | 'bc_ledger_id' | 'bc_last_sync_at' | 'companyId'>>): Promise<TimeEntry> {
-    const response = await this.client.patch(`/time-entries/${id}`, data);
+    const response = await this.client.patch(`/time-entries?id=${id}`, data);
     return response.data.entry;
   }
 

@@ -1,5 +1,5 @@
 import React, { useState, useEffect, useCallback } from 'react';
-import { Play, Pause, Square, Clock } from 'lucide-react';
+import { Play, Pause, Square, Clock, Edit2, Save, X } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import toast from 'react-hot-toast';
 import apiService from '../../services/api';
@@ -35,6 +35,13 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
   // Recent entries
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
+
+  // Edit mode state
+  const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
+  const [editForm, setEditForm] = useState({
+    startTime: '',
+    endTime: ''
+  });
 
   // Timer logic
   useEffect(() => {
@@ -254,14 +261,86 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
   // 🎯 CAMBIO: Ajustar para usar BC IDs en las recent entries
   const handleQuickStart = (entry: TimeEntry) => {
     setDescription(entry.description);
-    
+
     // Encontrar job y task por BC IDs
     const job = assignments.jobs.find(j => j.bc_job_id === entry.bc_job_id);
     const task = assignments.tasks.find(t => t.bc_task_id === entry.bc_task_id);
-    
+
     if (job) setSelectedProject(job.id);
     if (task) setSelectedTask(task.id);
     setShowProjectDropdown(false);
+  };
+
+  // Group entries by date
+  const groupEntriesByDate = (entries: TimeEntry[]) => {
+    const grouped: { [key: string]: TimeEntry[] } = {};
+
+    entries.forEach(entry => {
+      if (!grouped[entry.date]) {
+        grouped[entry.date] = [];
+      }
+      grouped[entry.date].push(entry);
+    });
+
+    return grouped;
+  };
+
+  // Handle edit entry
+  const handleStartEdit = (entry: TimeEntry) => {
+    setEditingEntryId(entry.id);
+    setEditForm({
+      startTime: entry.start_time?.slice(0, 5) || '',
+      endTime: entry.end_time?.slice(0, 5) || ''
+    });
+  };
+
+  const handleCancelEdit = () => {
+    setEditingEntryId(null);
+    setEditForm({ startTime: '', endTime: '' });
+  };
+
+  const handleSaveEdit = async (entry: TimeEntry) => {
+    if (!editForm.startTime || !editForm.endTime) {
+      toast.error(t('tracker:messages.time_required'));
+      return;
+    }
+
+    // Calculate hours
+    const start = new Date(`${entry.date}T${editForm.startTime}:00`);
+    const end = new Date(`${entry.date}T${editForm.endTime}:00`);
+
+    if (end <= start) {
+      toast.error(t('tracker:messages.end_after_start'));
+      return;
+    }
+
+    const diffMs = end.getTime() - start.getTime();
+    const diffHours = diffMs / (1000 * 60 * 60);
+
+    if (diffHours > 24) {
+      toast.error(t('tracker:messages.max_time'));
+      return;
+    }
+
+    try {
+      await apiService.updateTimeEntry(entry.id, {
+        start_time: `${editForm.startTime}:00`,
+        end_time: `${editForm.endTime}:00`,
+        hours: diffHours
+      });
+
+      toast.success(t('tracker:messages.entry_updated'));
+      setEditingEntryId(null);
+      setEditForm({ startTime: '', endTime: '' });
+      loadRecentEntries();
+      onUpdate();
+    } catch (error: any) {
+      toast.error(error.response?.data?.error || t('common:status.error'));
+    }
+  };
+
+  const canEditEntry = (entry: TimeEntry) => {
+    return entry.bc_sync_status === 'local' || entry.bc_sync_status === 'modified';
   };
 
   const selectedProjectData = assignments.jobs.find(job => job.id === selectedProject);
@@ -476,72 +555,139 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         )}
       </div>
 
-      {/* Recent Entries - CON HORARIOS MEJORADOS E i18n */}
+      {/* Recent Entries - Agrupadas por día con edición */}
       <div className="p-6">
         <h3 className="text-sm font-medium text-gray-900 mb-3">{t('tracker:recent_entries.title')}</h3>
-        
+
         {recentEntries.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
             <Clock className="w-8 h-8 mx-auto mb-2 opacity-50" />
             <p className="text-sm">{t('tracker:recent_entries.no_entries')}</p>
           </div>
         ) : (
-          <div className="space-y-2">
-            {recentEntries.map((entry) => {
-              // 🎯 CAMBIO: Buscar por BC IDs
-              const project = assignments.jobs.find(j => j.bc_job_id === entry.bc_job_id);
-              const task = assignments.tasks.find(t => t.bc_task_id === entry.bc_task_id);
-              
-              return (
-                <div key={entry.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg group">
-                  <div className="flex items-center gap-3 flex-1">
-                    <div className="w-3 h-3 bg-blue-500 rounded-full"></div>
-                    <div className="flex-1 min-w-0">
-                      <p className="text-sm font-medium text-gray-900 truncate">
-                        {entry.description}
-                      </p>
-                      <p className="text-xs text-gray-500">
-                        {project?.name} • {task?.description}
-                      </p>
-                    </div>
-                    <div className="flex items-center gap-4 text-xs text-gray-500">
-                      <span>{entry.date}</span>
-                      
-                      {/* 🎯 NUEVO: Mostrar horarios inicio - fin */}
-                      <div className="text-right">
-                        <div className="font-mono text-gray-700">
-                          {formatTimeHHMM(entry.start_time)} - {formatTimeHHMM(entry.end_time)}
-                        </div>
-                        <div className="font-medium">
-                          {t('tracker:recent_entries.total', { hours: entry.hours.toFixed(2) })}
-                        </div>
-                      </div>
-                      
-                      {/* Badge de estado sync */}
-                      <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                        entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
-                        entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
-                        entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
-                        entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
-                        'bg-gray-100 text-gray-700'
-                      }`}>
-                        {t(`tracker:sync_status.${entry.bc_sync_status}`) || entry.bc_sync_status}
-                      </span>
-                    </div>
+          <div className="space-y-4">
+            {Object.entries(groupEntriesByDate(recentEntries)).map(([date, entries]) => (
+              <div key={date} className="space-y-2">
+                {/* Date Header */}
+                <div className="flex items-center gap-2 px-2">
+                  <div className="text-xs font-semibold text-gray-600 uppercase tracking-wide">
+                    {new Date(date + 'T00:00:00').toLocaleDateString('es-ES', {
+                      weekday: 'long',
+                      day: 'numeric',
+                      month: 'long'
+                    })}
                   </div>
-                  
-                  <div className="flex items-center gap-1 opacity-0 group-hover:opacity-100 transition-opacity">
-                    <button
-                      onClick={() => handleQuickStart(entry)}
-                      className="p-1 text-gray-400 hover:text-blue-600 rounded"
-                      title={t('tracker:actions.use_for_timer')}
-                    >
-                      <Play className="w-4 h-4" />
-                    </button>
+                  <div className="flex-1 h-px bg-gray-200"></div>
+                  <div className="text-xs text-gray-500">
+                    {entries.reduce((sum, e) => sum + e.hours, 0).toFixed(2)}h
                   </div>
                 </div>
-              );
-            })}
+
+                {/* Entries for this date */}
+                {entries.map((entry) => {
+                  const project = assignments.jobs.find(j => j.bc_job_id === entry.bc_job_id);
+                  const task = assignments.tasks.find(t => t.bc_task_id === entry.bc_task_id);
+                  const isEditing = editingEntryId === entry.id;
+                  const editable = canEditEntry(entry);
+
+                  return (
+                    <div key={entry.id} className="flex items-center justify-between p-3 hover:bg-gray-50 rounded-lg group border border-gray-100">
+                      <div className="flex items-center gap-3 flex-1">
+                        <div className="w-3 h-3 bg-blue-500 rounded-full flex-shrink-0"></div>
+                        <div className="flex-1 min-w-0">
+                          <p className="text-sm font-medium text-gray-900 truncate">
+                            {entry.description}
+                          </p>
+                          <p className="text-xs text-gray-500">
+                            {project?.name} • {task?.description}
+                          </p>
+                        </div>
+
+                        {/* Time section - Editable if not synced */}
+                        {isEditing ? (
+                          <div className="flex items-center gap-2">
+                            <input
+                              type="time"
+                              value={editForm.startTime}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, startTime: e.target.value }))}
+                              className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                            <span className="text-gray-400">-</span>
+                            <input
+                              type="time"
+                              value={editForm.endTime}
+                              onChange={(e) => setEditForm(prev => ({ ...prev, endTime: e.target.value }))}
+                              className="px-2 py-1 border border-gray-300 rounded text-xs focus:outline-none focus:ring-2 focus:ring-blue-500"
+                            />
+                          </div>
+                        ) : (
+                          <div className="text-right">
+                            <div className="font-mono text-xs text-gray-700">
+                              {formatTimeHHMM(entry.start_time)} - {formatTimeHHMM(entry.end_time)}
+                            </div>
+                            <div className="text-xs font-medium text-blue-600">
+                              {entry.hours.toFixed(2)}h
+                            </div>
+                          </div>
+                        )}
+
+                        {/* Badge de estado sync */}
+                        <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
+                          entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
+                          entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
+                          entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
+                          entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
+                          'bg-gray-100 text-gray-700'
+                        }`}>
+                          {t(`tracker:sync_status.${entry.bc_sync_status}`) || entry.bc_sync_status}
+                        </span>
+                      </div>
+
+                      {/* Action buttons */}
+                      <div className={`flex items-center gap-1 ml-2 ${isEditing ? 'opacity-100' : 'opacity-0 group-hover:opacity-100'} transition-opacity`}>
+                        {isEditing ? (
+                          <>
+                            <button
+                              onClick={() => handleSaveEdit(entry)}
+                              className="p-1 text-green-600 hover:bg-green-50 rounded"
+                              title="Guardar"
+                            >
+                              <Save className="w-4 h-4" />
+                            </button>
+                            <button
+                              onClick={handleCancelEdit}
+                              className="p-1 text-gray-400 hover:bg-gray-100 rounded"
+                              title="Cancelar"
+                            >
+                              <X className="w-4 h-4" />
+                            </button>
+                          </>
+                        ) : (
+                          <>
+                            {editable && (
+                              <button
+                                onClick={() => handleStartEdit(entry)}
+                                className="p-1 text-gray-400 hover:text-orange-600 rounded"
+                                title="Editar horarios"
+                              >
+                                <Edit2 className="w-4 h-4" />
+                              </button>
+                            )}
+                            <button
+                              onClick={() => handleQuickStart(entry)}
+                              className="p-1 text-gray-400 hover:text-blue-600 rounded"
+                              title={t('tracker:actions.use_for_timer')}
+                            >
+                              <Play className="w-4 h-4" />
+                            </button>
+                          </>
+                        )}
+                      </div>
+                    </div>
+                  );
+                })}
+              </div>
+            ))}
           </div>
         )}
       </div>
