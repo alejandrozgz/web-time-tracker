@@ -8,9 +8,11 @@ export async function POST(
 ) {
   const startTime = Date.now();
 
+  // Parse these outside try block so they're available in catch
+  const { companyId } = await request.json();
+  const { tenant: tenantSlug } = await params;
+
   try {
-    const { companyId } = await request.json();
-    const { tenant: tenantSlug } = await params;
 
     console.log('🔄 ===== SYNC TO BC STARTED =====');
     console.log('🔍 Tenant:', tenantSlug);
@@ -96,17 +98,59 @@ export async function POST(
     // 🚀 Initialize BC Client
     const bcClient = new BusinessCentralClient(tenant, company);
 
-    // Create unique batch name
-    const batchName = 'TT-WEB';
     let syncedCount = 0;
     let failedCount = 0;
     const errors: string[] = [];
     const errorDetails: any[] = [];
 
-    // 🔄 Process each entry
+    // 📊 Track batches and their entries
+    const batchesUsed: Record<string, { count: number; hours: number }> = {};
+
+    // 🔄 Process each entry - batch name comes from the entry itself (set during creation)
     for (const entry of pendingEntries) {
+      // ❌ STRICT: batch name must be configured, no fallback
+      const batchName = entry.bc_batch_name;
+
+      if (!batchName) {
+        console.error(`❌ Entry ${entry.id} has no batch name configured`);
+
+        // Mark as error
+        await supabaseAdmin
+          .from('time_entries')
+          .update({
+            bc_sync_status: 'error',
+            bc_last_sync_at: new Date().toISOString()
+          })
+          .eq('id', entry.id);
+
+        // Log error
+        await supabaseAdmin.from('bc_sync_logs').insert({
+          tenant_id: tenant.id,
+          company_id: companyId,
+          operation_type: 'sync_to_bc',
+          time_entry_id: entry.id,
+          log_level: 'error',
+          message: `Entry has no batch name configured`,
+          resource_no: entry.resource_no,
+          details: {
+            entry_id: entry.id,
+            resource_no: entry.resource_no,
+            error: 'bc_batch_name is null or empty'
+          }
+        });
+
+        failedCount++;
+        errors.push(`Entry ${entry.id}: No batch name configured`);
+        errorDetails.push({
+          entry_id: entry.id,
+          error: 'No batch name configured',
+          code: 'MISSING_BATCH_NAME'
+        });
+        continue; // Skip this entry
+      }
+
       try {
-        console.log(`🔄 Syncing entry ${entry.id}: ${entry.description}`);
+        console.log(`🔄 Syncing entry ${entry.id}: ${entry.description} to batch ${batchName}`);
 
         // 📤 Create Job Journal Line in BC
         const bcJournalLine = await bcClient.createJobJournalLine({
@@ -134,8 +178,15 @@ export async function POST(
           })
           .eq('id', entry.id);
 
+        // Track batch usage
+        if (!batchesUsed[batchName]) {
+          batchesUsed[batchName] = { count: 0, hours: 0 };
+        }
+        batchesUsed[batchName].count++;
+        batchesUsed[batchName].hours += parseFloat(entry.hours);
+
         syncedCount++;
-        console.log(`✅ Entry ${entry.id} synced successfully`);
+        console.log(`✅ Entry ${entry.id} synced successfully to batch ${batchName}`);
 
       } catch (error) {
         console.error(`❌ Failed to sync entry ${entry.id}:`, error);
@@ -192,55 +243,64 @@ export async function POST(
 
     const duration = Date.now() - startTime;
 
-    // 📊 Create batch record
-    let batchId: string | undefined;
+    // 📊 Create batch records for each unique batch used
+    const batchIds: string[] = [];
     if (syncedCount > 0) {
-      const { data: batchData } = await supabaseAdmin
-        .from('bc_sync_batches')
-        .insert({
-          tenant_id: tenant.id,
-          company_id: companyId,
-          batch_name: batchName,
-          status: 'draft',
-          entries_count: syncedCount,
-          total_hours: totalHours
-        })
-        .select('id')
-        .single();
+      for (const [batchName, batchInfo] of Object.entries(batchesUsed)) {
+        const { data: batchData } = await supabaseAdmin
+          .from('bc_sync_batches')
+          .insert({
+            tenant_id: tenant.id,
+            company_id: companyId,
+            batch_name: batchName,
+            status: 'draft',
+            entries_count: batchInfo.count,
+            total_hours: batchInfo.hours
+          })
+          .select('id')
+          .single();
 
-      batchId = batchData?.id;
+        if (batchData?.id) {
+          batchIds.push(batchData.id);
+        }
+        console.log(`📦 Created batch record for ${batchName}: ${batchInfo.count} entries, ${batchInfo.hours.toFixed(2)}h`);
+      }
     }
+
+    // Get list of batch names used
+    const batchNamesUsed = Object.keys(batchesUsed);
 
     // Log the overall sync operation
     await supabaseAdmin.from('bc_sync_logs').insert({
       tenant_id: tenant.id,
       company_id: companyId,
       operation_type: 'sync_to_bc',
-      batch_name: batchName,
-      batch_id: batchId,
+      batch_name: batchNamesUsed.length > 0 ? batchNamesUsed.join(', ') : undefined,
+      batch_id: batchIds.length > 0 ? batchIds[0] : undefined,
       log_level: failedCount > 0 ? (syncedCount > 0 ? 'warning' : 'error') : 'success',
-      message: `Sync completed: ${syncedCount} succeeded, ${failedCount} failed`,
+      message: `Sync completed: ${syncedCount} succeeded, ${failedCount} failed across ${batchNamesUsed.length} batch(es)`,
       entries_processed: pendingEntries.length,
       entries_succeeded: syncedCount,
       entries_failed: failedCount,
       total_hours: totalHours,
       duration_ms: duration,
       details: {
-        batch_name: batchName,
+        batches: batchesUsed,
         errors: errorDetails.length > 0 ? errorDetails : undefined
       }
     });
 
     console.log('✅ ===== SYNC TO BC COMPLETED =====');
     console.log(`📊 Synced: ${syncedCount}, Failed: ${failedCount}`);
+    console.log(`📦 Batches used: ${batchNamesUsed.join(', ')}`);
 
     return NextResponse.json({
       success: true,
-      batch_name: syncedCount > 0 ? batchName : undefined,
+      batches_used: batchNamesUsed,
       synced_entries: syncedCount,
       failed_entries: failedCount,
       errors: errors.length > 0 ? errors : undefined,
-      message: `Successfully synced ${syncedCount} entries${failedCount > 0 ? `, ${failedCount} failed` : ''}`
+      message: `Successfully synced ${syncedCount} entries to ${batchNamesUsed.length} batch(es)${failedCount > 0 ? `, ${failedCount} failed` : ''}`
     });
 
   } catch (error) {
@@ -248,37 +308,36 @@ export async function POST(
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const duration = Date.now() - startTime;
 
-    // Try to log the error (best effort)
-    try {
-      const { companyId } = await request.json();
-      const { tenant: tenantSlug } = await params;
+    // Try to log the error (best effort) - use variables from outer scope
+    if (tenantSlug && companyId) {
+      try {
+        const { data: tenant } = await supabaseAdmin
+          .from('tenants')
+          .select('id')
+          .eq('slug', tenantSlug)
+          .single();
 
-      const { data: tenant } = await supabaseAdmin
-        .from('tenants')
-        .select('id')
-        .eq('slug', tenantSlug)
-        .single();
-
-      if (tenant) {
-        await supabaseAdmin.from('bc_sync_logs').insert({
-          tenant_id: tenant.id,
-          company_id: companyId,
-          operation_type: 'sync_to_bc',
-          log_level: 'error',
-          message: 'Sync operation failed with critical error',
-          bc_error_message: errorMessage,
-          duration_ms: duration,
-          entries_processed: 0,
-          entries_succeeded: 0,
-          entries_failed: 0,
-          details: {
-            error: errorMessage,
-            stack: error instanceof Error ? error.stack : undefined
-          }
-        });
+        if (tenant) {
+          await supabaseAdmin.from('bc_sync_logs').insert({
+            tenant_id: tenant.id,
+            company_id: companyId,
+            operation_type: 'sync_to_bc',
+            log_level: 'error',
+            message: 'Sync operation failed with critical error',
+            bc_error_message: errorMessage,
+            duration_ms: duration,
+            entries_processed: 0,
+            entries_succeeded: 0,
+            entries_failed: 0,
+            details: {
+              error: errorMessage,
+              stack: error instanceof Error ? error.stack : undefined
+            }
+          });
+        }
+      } catch (logError) {
+        console.error('Failed to log error:', logError);
       }
-    } catch (logError) {
-      console.error('Failed to log error:', logError);
     }
 
     return NextResponse.json({

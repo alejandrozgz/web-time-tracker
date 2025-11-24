@@ -136,20 +136,31 @@ export async function POST(
       throw new Error('Company not found');
     }
 
-    // Extract resource from JWT token
+    // Extract resource and batch info from JWT token
     const authHeader = request.headers.get('authorization');
     let resourceNo = 'R0010'; // fallback
+    let jobJournalBatch: string | undefined;
 
     if (authHeader && authHeader.startsWith('Bearer ')) {
       try {
         const token = authHeader.substring(7);
         const decodedToken = JSON.parse(Buffer.from(token, 'base64').toString());
         resourceNo = decodedToken.resourceNo || 'R0010';
-        console.log('Using resource from token:', resourceNo);
+        jobJournalBatch = decodedToken.jobJournalBatch;
+        console.log('📋 Token decoded - resource:', resourceNo, 'batch:', jobJournalBatch || '❌ NOT CONFIGURED');
       } catch (e) {
         console.log('Could not decode token, using fallback resource');
       }
     }
+
+    // ❌ STRICT: Fail if batch is not configured
+    if (!jobJournalBatch) {
+      return NextResponse.json({
+        error: `Resource ${resourceNo} does not have a jobJournalBatch configured in Business Central. Please configure the batch name for this resource before creating time entries.`
+      }, { status: 400 });
+    }
+
+    console.log('✅ Using batch:', jobJournalBatch);
 
     // 🔍 Check for overlapping entries (same user, same day)
     const { data: existingEntries } = await supabaseAdmin
@@ -163,18 +174,18 @@ export async function POST(
     if (validatedData.start_time && validatedData.end_time) {
       const hasOverlap = existingEntries?.some(entry => {
         if (!entry.start_time || !entry.end_time) return false;
-        
+
         const newStart = new Date(`2000-01-01T${validatedData.start_time}`);
         const newEnd = new Date(`2000-01-01T${validatedData.end_time}`);
         const existingStart = new Date(`2000-01-01T${entry.start_time}`);
         const existingEnd = new Date(`2000-01-01T${entry.end_time}`);
-        
+
         return (newStart < existingEnd && newEnd > existingStart);
       });
 
       if (hasOverlap) {
-        return NextResponse.json({ 
-          error: 'Time overlap detected with existing entry' 
+        return NextResponse.json({
+          error: 'Time overlap detected with existing entry'
         }, { status: 400 });
       }
     }
@@ -191,6 +202,7 @@ export async function POST(
       start_time: validatedData.start_time,
       end_time: validatedData.end_time,
       resource_no: resourceNo,
+      bc_batch_name: jobJournalBatch, // ✅ STRICT: Must be configured, no fallback
       bc_sync_status: 'local', // Initial status
       is_editable: true,
       created_at: new Date().toISOString(),
