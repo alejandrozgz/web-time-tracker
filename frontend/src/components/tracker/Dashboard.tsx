@@ -35,6 +35,7 @@ const Dashboard: React.FC = () => {
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [currentWeek, setCurrentWeek] = useState(getWeekDates(new Date()));
   const [loading, setLoading] = useState(true);
+  const [loadingEntries, setLoadingEntries] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
 
   // Debug: Watch assignments changes
@@ -57,30 +58,19 @@ const Dashboard: React.FC = () => {
     }
   }, [assignments]);
 
-  const loadData = useCallback(async () => {
+  const loadAssignments = useCallback(async () => {
     if (!company) {
-      console.log('🔍 Dashboard - loadData called but no company');
+      console.log('🔍 Dashboard - loadAssignments called but no company');
       return;
     }
-    
-    console.log('🔍 Dashboard - loadData called with company:', company.id);
-    setLoading(true);
-    
-    try {
-      console.log('🔍 Dashboard - starting API calls...');
-      
-      const [jobsData, timeEntriesData] = await Promise.all([
-		  apiService.getJobs(company.id),
-		  apiService.getTimeEntries(
-			company.id,
-			formatDate(currentWeek.start),
-			formatDate(currentWeek.end)
-		  )
-		]);
 
-      console.log('🔍 Dashboard - API calls completed');
+    console.log('🔍 Dashboard - loadAssignments called with company:', company.id);
+    setLoading(true);
+
+    try {
+      const jobsData = await apiService.getJobs(company.id);
+
       console.log('🔍 Dashboard - jobsData received:', jobsData);
-      console.log('🔍 Dashboard - jobsData type:', typeof jobsData);
       console.log('🔍 Dashboard - jobs count:', jobsData?.jobs?.length || 0);
       console.log('🔍 Dashboard - tasks count:', jobsData?.tasks?.length || 0);
 
@@ -89,36 +79,71 @@ const Dashboard: React.FC = () => {
           jobs: Array.isArray(jobsData.jobs) ? jobsData.jobs : [],
           tasks: Array.isArray(jobsData.tasks) ? jobsData.tasks : []
         };
-        
+
         console.log('🔍 Dashboard - setting assignments:', validJobsData);
         setAssignments(validJobsData);
       } else {
         console.warn('🔍 Dashboard - Invalid jobsData format:', jobsData);
         setAssignments({ jobs: [], tasks: [] });
       }
-
-      setTimeEntries(Array.isArray(timeEntriesData) ? timeEntriesData : []);
     } catch (error) {
-      console.error('🔍 Dashboard - Error loading data:', error);
+      console.error('🔍 Dashboard - Error loading assignments:', error);
       setAssignments({ jobs: [], tasks: [] });
-      setTimeEntries([]);
     } finally {
       setLoading(false);
     }
+  }, [company]);
+
+  const loadTimeEntries = useCallback(async () => {
+    if (!company) return;
+
+    setLoadingEntries(true);
+    try {
+      const timeEntriesData = await apiService.getTimeEntries(
+        company.id,
+        formatDate(currentWeek.start),
+        formatDate(currentWeek.end)
+      );
+
+      setTimeEntries(Array.isArray(timeEntriesData) ? timeEntriesData : []);
+      console.log('🔍 Dashboard - Time entries loaded:', timeEntriesData?.length || 0);
+    } catch (error) {
+      console.error('🔍 Dashboard - Error loading time entries:', error);
+      setTimeEntries([]);
+    } finally {
+      setLoadingEntries(false);
+    }
   }, [company, currentWeek.start, currentWeek.end]);
 
+  const loadData = useCallback(async () => {
+    await Promise.all([loadAssignments(), loadTimeEntries()]);
+  }, [loadAssignments, loadTimeEntries]);
+
+  // Load assignments only when user/company changes
   useEffect(() => {
     console.log('🔍 Dashboard - useEffect triggered, user:', !!user, 'company:', !!company);
     if (user && company) {
-      console.log('🔍 Dashboard - calling loadData...');
-      loadData();
+      console.log('🔍 Dashboard - calling loadAssignments...');
+      loadAssignments();
     }
-  }, [user, company, loadData]);
+  }, [user, company, loadAssignments]);
+
+  // Load time entries when currentWeek changes
+  useEffect(() => {
+    if (user && company) {
+      console.log('🔍 Dashboard - week changed, loading time entries...');
+      loadTimeEntries();
+    }
+  }, [user, company, currentWeek, loadTimeEntries]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentWeek.start);
     newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
     setCurrentWeek(getWeekDates(newDate));
+  };
+
+  const setWeekByDate = (date: Date) => {
+    setCurrentWeek(getWeekDates(date));
   };
 
   // Tabs with translations
@@ -200,6 +225,8 @@ const Dashboard: React.FC = () => {
           timeEntries={timeEntries}
           onUpdate={loadData}
           companyId={company?.id || ''}
+          onWeekChange={setWeekByDate}
+          loading={loadingEntries}
         />
       )}
     </div>

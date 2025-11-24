@@ -62,20 +62,76 @@ const AdminSyncLogsViewer: React.FC = () => {
   const loadLogs = async () => {
     setLoading(true);
     try {
-      // For now, we'll fetch logs from the first company or selected company
-      // In the future, you might want to create a dedicated admin endpoint
-      const companyId = selectedCompanyId || companies[0]?.id;
+      const companyId = selectedCompanyId;
 
+      console.log('🔍 Loading logs for company:', companyId || 'ALL');
+      console.log('🔍 Available companies:', companies.length);
+
+      // If no company selected, fetch logs from all companies
       if (!companyId) {
-        setLogs([]);
+        if (companies.length === 0) {
+          console.warn('⚠️ No companies available');
+          setLogs([]);
+          setLoading(false);
+          return;
+        }
+
+        // Fetch logs from all companies and combine them
+        const allLogsPromises = companies.map(async (company) => {
+          if (!company.tenant_slug) return [];
+
+          try {
+            const params = new URLSearchParams();
+            if (filters.operation_type) params.append('operation_type', filters.operation_type);
+            if (filters.log_level) params.append('log_level', filters.log_level);
+            if (filters.date_from) params.append('date_from', filters.date_from);
+            if (filters.date_to) params.append('date_to', filters.date_to);
+            params.append('limit', '1000');
+            params.append('offset', '0');
+
+            const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
+            const url = `${API_BASE_URL}/${company.tenant_slug}/sync/logs?companyId=${company.id}&${params}`;
+
+            const response = await fetch(url);
+            if (!response.ok) return [];
+
+            const data = await response.json();
+            return (data.logs || []).map((log: any) => ({
+              ...log,
+              company_name: company.name,
+              tenant_name: company.tenant_name
+            }));
+          } catch (error) {
+            console.error(`Error fetching logs for company ${company.name}:`, error);
+            return [];
+          }
+        });
+
+        const allLogsArrays = await Promise.all(allLogsPromises);
+        const allLogs = allLogsArrays.flat();
+
+        // Sort by created_at descending
+        allLogs.sort((a, b) => new Date(b.created_at).getTime() - new Date(a.created_at).getTime());
+
+        // Apply pagination
+        const offset = filters.offset || 0;
+        const limit = filters.limit || 50;
+        const paginatedLogs = allLogs.slice(offset, offset + limit);
+
+        console.log('✅ Received logs from all companies:', paginatedLogs.length);
+        setLogs(paginatedLogs);
+        setLoading(false);
         return;
       }
 
-      // We need to use the tenant-based API since admin endpoints don't exist yet
-      // This is a temporary solution - ideally you'd create /api/admin/sync-logs
+      // Single company - use existing logic
       const company = companies.find(c => c.id === companyId);
+      console.log('🔍 Found company:', company?.name, 'slug:', company?.tenant_slug);
+
       if (!company?.tenant_slug) {
+        console.warn('⚠️ Company has no tenant_slug');
         setLogs([]);
+        setLoading(false);
         return;
       }
 
@@ -89,16 +145,32 @@ const AdminSyncLogsViewer: React.FC = () => {
       params.append('offset', (filters.offset || 0).toString());
 
       const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
-      const response = await fetch(
-        `${API_BASE_URL}/${company.tenant_slug}/sync/logs?company_id=${companyId}&${params}`
-      );
+      const url = `${API_BASE_URL}/${company.tenant_slug}/sync/logs?companyId=${companyId}&${params}`;
+      console.log('🔍 Fetching from URL:', url);
 
-      if (!response.ok) throw new Error('Failed to fetch logs');
+      const response = await fetch(url);
+      console.log('🔍 Response status:', response.status);
+
+      if (!response.ok) {
+        const errorText = await response.text();
+        console.error('❌ Response error:', errorText);
+        throw new Error('Failed to fetch logs');
+      }
 
       const data = await response.json();
-      setLogs(data.logs || []);
+      console.log('✅ Received logs:', data.logs?.length || 0);
+      console.log('📊 Full response:', data);
+
+      // Add company name to logs
+      const logsWithCompanyName = (data.logs || []).map((log: any) => ({
+        ...log,
+        company_name: company.name,
+        tenant_name: company.tenant_name
+      }));
+
+      setLogs(logsWithCompanyName);
     } catch (error) {
-      console.error('Error loading sync logs:', error);
+      console.error('❌ Error loading sync logs:', error);
       setLogs([]);
     } finally {
       setLoading(false);
@@ -253,10 +325,8 @@ const AdminSyncLogsViewer: React.FC = () => {
               onChange={(e) => setSelectedCompanyId(e.target.value)}
               className="w-full px-3 py-2 border border-gray-300 rounded-md focus:outline-none focus:ring-2 focus:ring-blue-500"
             >
-              <option value="">
-                {filteredCompanies.length > 0 ? filteredCompanies[0].name : 'Select a company'}
-              </option>
-              {filteredCompanies.slice(1).map((company) => (
+              <option value="">Select a company</option>
+              {filteredCompanies.map((company) => (
                 <option key={company.id} value={company.id}>
                   {company.name}
                 </option>
@@ -343,7 +413,7 @@ const AdminSyncLogsViewer: React.FC = () => {
               <FileText className="w-12 h-12 mx-auto mb-3 text-gray-400" />
               <p>No sync logs found</p>
               {!selectedCompanyId && companies.length > 0 && (
-                <p className="text-sm mt-2">Select a company to view its sync logs</p>
+                <p className="text-sm mt-2">Showing logs from all companies. Select a specific company to filter.</p>
               )}
             </div>
           ) : (
@@ -358,12 +428,17 @@ const AdminSyncLogsViewer: React.FC = () => {
                       <div className="flex items-start gap-3 flex-1">
                         {getLogLevelIcon(log.log_level)}
                         <div className="flex-1">
-                          <div className="flex items-center gap-2 mb-1">
+                          <div className="flex items-center gap-2 mb-1 flex-wrap">
                             {getOperationTypeBadge(log.operation_type)}
                             {getLogLevelBadge(log.log_level)}
                             {log.batch_name && (
                               <span className="px-2 py-1 bg-gray-100 text-gray-700 rounded text-xs font-mono">
                                 {log.batch_name}
+                              </span>
+                            )}
+                            {!selectedCompanyId && (log as any).company_name && (
+                              <span className="px-2 py-1 bg-indigo-100 text-indigo-700 rounded text-xs font-medium">
+                                {(log as any).company_name}
                               </span>
                             )}
                           </div>

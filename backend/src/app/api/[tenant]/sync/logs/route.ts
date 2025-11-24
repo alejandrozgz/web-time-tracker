@@ -32,17 +32,21 @@ export async function GET(
       return NextResponse.json({ error: 'Tenant not found' }, { status: 404 });
     }
 
-    // Call the stored procedure to get sync logs
-    const { data: logs, error: logsError } = await supabaseAdmin
-      .rpc('get_sync_logs', {
-        p_company_id: companyId,
-        p_operation_type: operation_type || null,
-        p_log_level: log_level || null,
-        p_date_from: date_from ? new Date(date_from).toISOString() : null,
-        p_date_to: date_to ? new Date(date_to).toISOString() : null,
-        p_limit: limit,
-        p_offset: offset
-      });
+    // Query the bc_sync_logs table directly
+    let query = supabaseAdmin
+      .from('bc_sync_logs')
+      .select('*')
+      .eq('company_id', companyId)
+      .order('created_at', { ascending: false })
+      .range(offset, offset + limit - 1);
+
+    // Apply filters
+    if (operation_type) query = query.eq('operation_type', operation_type);
+    if (log_level) query = query.eq('log_level', log_level);
+    if (date_from) query = query.gte('created_at', new Date(date_from).toISOString());
+    if (date_to) query = query.lte('created_at', new Date(date_to).toISOString());
+
+    const { data: logs, error: logsError, count } = await query;
 
     if (logsError) {
       console.error('Error fetching sync logs:', logsError);
@@ -51,7 +55,7 @@ export async function GET(
 
     return NextResponse.json({
       logs: logs || [],
-      count: logs?.length || 0,
+      count: count || logs?.length || 0,
       limit,
       offset
     });

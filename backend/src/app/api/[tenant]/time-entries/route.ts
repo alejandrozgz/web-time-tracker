@@ -25,6 +25,8 @@ export async function GET(
     const companyId = url.searchParams.get('companyId');
     const from = url.searchParams.get('from');
     const to = url.searchParams.get('to');
+    const limit = parseInt(url.searchParams.get('limit') || '100');
+    const offset = parseInt(url.searchParams.get('offset') || '0');
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
@@ -73,7 +75,7 @@ export async function GET(
     if (from) query = query.gte('date', from);
     if (to) query = query.lte('date', to);
 
-    const { data: entries, error } = await query.limit(100);
+    const { data: entries, error } = await query.range(offset, offset + limit - 1);
 
     if (error) throw error;
 

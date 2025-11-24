@@ -8,6 +8,8 @@ interface WeeklyTimesheetProps {
   timeEntries: TimeEntry[];
   onUpdate: () => void;
   companyId: string;
+  onWeekChange?: (date: Date) => void;
+  loading?: boolean;
 }
 
 interface TimeMatrix {
@@ -16,9 +18,11 @@ interface TimeMatrix {
   };
 }
 
-const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({ 
-  assignments, 
-  timeEntries 
+const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
+  assignments,
+  timeEntries,
+  onWeekChange,
+  loading = false
 }) => {
   const { t, i18n } = useTranslation(['dashboard', 'common']);
   const [currentWeek, setCurrentWeek] = useState<Date>(new Date());
@@ -67,16 +71,20 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     const newDate = new Date(currentWeek);
     newDate.setDate(newDate.getDate() - 7);
     setCurrentWeek(newDate);
+    onWeekChange?.(newDate);
   };
 
   const nextWeek = () => {
     const newDate = new Date(currentWeek);
     newDate.setDate(newDate.getDate() + 7);
     setCurrentWeek(newDate);
+    onWeekChange?.(newDate);
   };
 
   const goToThisWeek = () => {
-    setCurrentWeek(new Date());
+    const today = new Date();
+    setCurrentWeek(today);
+    onWeekChange?.(today);
   };
 
   // Calculate totals using task keys
@@ -162,7 +170,17 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
   };
 
   return (
-    <div className="bg-white rounded-lg shadow-sm border border-gray-200">
+    <div className="bg-white rounded-lg shadow-sm border border-gray-200 relative">
+      {/* Loading Overlay */}
+      {loading && (
+        <div className="absolute inset-0 bg-white/80 backdrop-blur-sm z-10 flex items-center justify-center rounded-lg">
+          <div className="flex flex-col items-center gap-3">
+            <div className="animate-spin rounded-full h-12 w-12 border-b-2 border-blue-600"></div>
+            <p className="text-sm font-medium text-gray-700">Loading entries...</p>
+          </div>
+        </div>
+      )}
+
       {/* Header */}
       <div className="p-6 border-b border-gray-200">
         <div className="flex items-center justify-between">
@@ -174,28 +192,31 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
             <div className="flex items-center gap-2">
               <button
                 onClick={previousWeek}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={loading}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('common:buttons.previous')}
               >
                 <ChevronLeft className="w-5 h-5" />
               </button>
-              
+
               <div className="text-sm font-medium text-gray-900 min-w-[200px] text-center">
                 {formatWeekRange(weekDates[0], weekDates[6])}
               </div>
-              
+
               <button
                 onClick={nextWeek}
-                className="p-2 text-gray-400 hover:text-gray-600 transition-colors"
+                disabled={loading}
+                className="p-2 text-gray-400 hover:text-gray-600 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
                 title={t('common:buttons.next')}
               >
                 <ChevronRight className="w-5 h-5" />
               </button>
             </div>
-            
+
             <button
               onClick={goToThisWeek}
-              className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors"
+              disabled={loading}
+              className="flex items-center gap-2 px-3 py-2 text-sm bg-blue-50 text-blue-700 rounded-md hover:bg-blue-100 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
             >
               <Calendar className="w-4 h-4" />
               {t('dashboard:summary.this_week', 'This Week')}

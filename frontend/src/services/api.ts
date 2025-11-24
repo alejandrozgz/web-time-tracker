@@ -73,12 +73,14 @@ class ApiService {
   }
 
   // ⏱️ TIME ENTRIES
-  async getTimeEntries(companyId: string, from?: string, to?: string): Promise<TimeEntry[]> {
+  async getTimeEntries(companyId: string, from?: string, to?: string, limit?: number, offset?: number): Promise<TimeEntry[]> {
     const params = new URLSearchParams();
     params.append('companyId', companyId);
     if (from) params.append('from', from);
     if (to) params.append('to', to);
-    
+    if (limit) params.append('limit', limit.toString());
+    if (offset !== undefined) params.append('offset', offset.toString());
+
     const response = await this.client.get(`/time-entries?${params}`);
     return response.data.entries || [];
   }

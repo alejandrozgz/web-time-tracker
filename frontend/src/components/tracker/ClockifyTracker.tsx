@@ -35,6 +35,10 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
   // Recent entries
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const ENTRIES_PER_PAGE = 20;
 
   // Edit mode state
   const [editingEntryId, setEditingEntryId] = useState<string | null>(null);
@@ -76,29 +80,35 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
     }
   }, [manualEntry.startTime, manualEntry.endTime, manualEntry.date]);
 
-  const loadRecentEntries = useCallback(async () => {
+  const loadRecentEntries = useCallback(async (page = 1, append = false) => {
 	  try {
-		const today = new Date();
-		const weekAgo = new Date(today.getTime() - 7 * 24 * 60 * 60 * 1000);
-		
+		setLoadingMore(true);
+
+		// No date limit - fetch all entries with pagination
+		const offset = (page - 1) * ENTRIES_PER_PAGE;
+
 		const entries = await apiService.getTimeEntries(
-		  companyId, // ✅ AGREGAR companyId como primer parámetro
-		  weekAgo.toISOString().split('T')[0],
-		  today.toISOString().split('T')[0]
+		  companyId,
+		  undefined, // No from date - get all entries
+		  undefined, // No to date - get all entries including future
+		  ENTRIES_PER_PAGE,
+		  offset
 		);
-		
-		// Sort by date desc, then by id desc
-		const sorted = entries.sort((a, b) => {
-		  const dateCompare = new Date(b.date).getTime() - new Date(a.date).getTime();
-		  if (dateCompare !== 0) return dateCompare;
-		  return b.id.localeCompare(a.id);
-		});
-		
-		setRecentEntries(sorted.slice(0, 5)); // Show last 5
+
+		if (append) {
+		  setRecentEntries(prev => [...prev, ...entries]);
+		} else {
+		  setRecentEntries(entries);
+		}
+
+		// Check if there are more entries (if we got less than requested, no more)
+		setHasMore(entries.length === ENTRIES_PER_PAGE);
+		setLoadingMore(false);
 	  } catch (error) {
 		console.error('Error loading recent entries:', error);
+		setLoadingMore(false);
 	  }
-	}, [companyId]);
+	}, [companyId, ENTRIES_PER_PAGE]);
 
   useEffect(() => {
     loadRecentEntries();
@@ -188,8 +198,11 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
       setElapsedTime(0);
       setDescription('');
 
+      // ✅ Only reload recent entries, not entire page
+      setCurrentPage(1);
+      await loadRecentEntries(1, false);
+      // Call onUpdate but without awaiting to prevent full reload blocking
       onUpdate();
-      loadRecentEntries();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common:status.error'));
     }
@@ -237,11 +250,11 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         companyId
       });
 
-      toast.success(t('tracker:messages.entry_added_for_date', { 
-        time: formatHours(manualEntry.calculatedHours), 
-        date: manualEntry.date 
+      toast.success(t('tracker:messages.entry_added_for_date', {
+        time: formatHours(manualEntry.calculatedHours),
+        date: manualEntry.date
       }));
-      
+
       // Reset manual entry
       setManualEntry({
         date: new Date().toISOString().split('T')[0],
@@ -250,9 +263,12 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
         calculatedHours: 0
       });
       setDescription('');
-      
+
+      // ✅ Only reload recent entries, not entire page
+      setCurrentPage(1);
+      await loadRecentEntries(1, false);
+      // Call onUpdate but without awaiting to prevent full reload blocking
       onUpdate();
-      loadRecentEntries();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common:status.error'));
     }
@@ -332,7 +348,8 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
       toast.success(t('tracker:messages.entry_updated'));
       setEditingEntryId(null);
       setEditForm({ startTime: '', endTime: '' });
-      loadRecentEntries();
+      setCurrentPage(1);
+      await loadRecentEntries(1, false);
       onUpdate();
     } catch (error: any) {
       toast.error(error.response?.data?.error || t('common:status.error'));
@@ -341,6 +358,12 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
   const canEditEntry = (entry: TimeEntry) => {
     return entry.bc_sync_status === 'local' || entry.bc_sync_status === 'modified';
+  };
+
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    loadRecentEntries(nextPage, true);
   };
 
   const selectedProjectData = assignments.jobs.find(job => job.id === selectedProject);
@@ -557,7 +580,14 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
       {/* Recent Entries - Agrupadas por día con edición */}
       <div className="p-6">
-        <h3 className="text-sm font-medium text-gray-900 mb-3">{t('tracker:recent_entries.title')}</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-900">{t('tracker:recent_entries.title')}</h3>
+          {recentEntries.length > 0 && (
+            <span className="text-xs text-gray-500">
+              {recentEntries.length} {recentEntries.length === 1 ? 'entry' : 'entries'} loaded
+            </span>
+          )}
+        </div>
 
         {recentEntries.length === 0 ? (
           <div className="text-center py-8 text-gray-500">
@@ -688,6 +718,26 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
                 })}
               </div>
             ))}
+
+            {/* Load More Button */}
+            {hasMore && (
+              <div className="flex justify-center pt-4">
+                <button
+                  onClick={handleLoadMore}
+                  disabled={loadingMore}
+                  className="px-4 py-2 text-sm font-medium text-blue-600 hover:text-blue-700 hover:bg-blue-50 rounded-lg border border-blue-200 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+                >
+                  {loadingMore ? (
+                    <span className="flex items-center gap-2">
+                      <div className="animate-spin rounded-full h-4 w-4 border-b-2 border-blue-600"></div>
+                      Loading...
+                    </span>
+                  ) : (
+                    'Load More'
+                  )}
+                </button>
+              </div>
+            )}
           </div>
         )}
       </div>
