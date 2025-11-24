@@ -17,7 +17,9 @@
       "Bash(findstr:*)",
       "Bash(npm install:*)",
       "Bash(node scripts/generate-favicon.js:*)",
-      "Bash(npm pkg set:*)"
+      "Bash(npm pkg set:*)",
+      "Bash(npx supabase:*)",
+      "Bash(pkill:*)"
     ],
     "deny": [],
     "ask": []

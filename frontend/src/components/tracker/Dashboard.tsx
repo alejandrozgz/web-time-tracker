@@ -2,6 +2,7 @@ import React, { useState, useEffect, useCallback } from 'react';
 import { Play, Calendar } from 'lucide-react';
 import { useTranslation } from 'react-i18next';
 import ClockifyTracker from './ClockifyTracker';
+import RecentEntries from './RecentEntries';
 import WeeklyTimesheet from './WeeklyTimesheet';
 import SyncButton from '../sync/SyncButton';
 import { useAuth } from '../../context/AuthContext';
@@ -33,10 +34,15 @@ const Dashboard: React.FC = () => {
   const [activeTab, setActiveTab] = useState<'tracker' | 'timesheet'>('tracker');
   const [assignments, setAssignments] = useState<Assignment>({ jobs: [], tasks: [] });
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
+  const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
   const [currentWeek, setCurrentWeek] = useState(getWeekDates(new Date()));
   const [loading, setLoading] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(false);
   const [forceUpdate, setForceUpdate] = useState(0);
+  const [currentPage, setCurrentPage] = useState(1);
+  const [hasMore, setHasMore] = useState(true);
+  const [loadingMore, setLoadingMore] = useState(false);
+  const ENTRIES_PER_PAGE = 20;
 
   // Debug: Watch assignments changes
   useEffect(() => {
@@ -115,9 +121,47 @@ const Dashboard: React.FC = () => {
     }
   }, [company, currentWeek.start, currentWeek.end]);
 
+  const loadRecentEntries = useCallback(async (page = 1, append = false) => {
+    if (!company) return;
+
+    try {
+      setLoadingMore(true);
+      const offset = (page - 1) * ENTRIES_PER_PAGE;
+
+      const entries = await apiService.getTimeEntries(
+        company.id,
+        undefined, // No from date - get all entries
+        undefined, // No to date - get all entries including future
+        ENTRIES_PER_PAGE,
+        offset
+      );
+
+      if (append) {
+        setRecentEntries(prev => [...prev, ...entries]);
+      } else {
+        setRecentEntries(entries);
+      }
+
+      setHasMore(entries.length === ENTRIES_PER_PAGE);
+    } catch (error) {
+      console.error('🔍 Dashboard - Error loading recent entries:', error);
+      setRecentEntries([]);
+      setHasMore(false);
+    } finally {
+      setLoadingMore(false);
+    }
+  }, [company, ENTRIES_PER_PAGE]);
+
+  const handleLoadMore = () => {
+    const nextPage = currentPage + 1;
+    setCurrentPage(nextPage);
+    loadRecentEntries(nextPage, true);
+  };
+
   const loadData = useCallback(async () => {
-    await Promise.all([loadAssignments(), loadTimeEntries()]);
-  }, [loadAssignments, loadTimeEntries]);
+    await Promise.all([loadAssignments(), loadTimeEntries(), loadRecentEntries(1, false)]);
+    setCurrentPage(1);
+  }, [loadAssignments, loadTimeEntries, loadRecentEntries]);
 
   // Load assignments only when user/company changes
   useEffect(() => {
@@ -135,6 +179,15 @@ const Dashboard: React.FC = () => {
       loadTimeEntries();
     }
   }, [user, company, currentWeek, loadTimeEntries]);
+
+  // Load recent entries when tracker tab is active
+  useEffect(() => {
+    if (user && company && activeTab === 'tracker') {
+      console.log('🔍 Dashboard - tracker tab active, loading recent entries...');
+      loadRecentEntries(1, false);
+      setCurrentPage(1);
+    }
+  }, [user, company, activeTab, loadRecentEntries]);
 
   const navigateWeek = (direction: 'prev' | 'next') => {
     const newDate = new Date(currentWeek.start);
@@ -210,11 +263,22 @@ const Dashboard: React.FC = () => {
 
       {/* Tab Content */}
       {activeTab === 'tracker' && (
-        <div>
+        <div className="space-y-6">
+          {/* Tracker Section */}
           <ClockifyTracker
             assignments={assignments}
             onUpdate={loadData}
             companyId={company?.id || ''}
+          />
+
+          {/* Recent Entries Section - Separated */}
+          <RecentEntries
+            entries={recentEntries}
+            assignments={assignments}
+            onUpdate={loadData}
+            onLoadMore={handleLoadMore}
+            hasMore={hasMore}
+            loadingMore={loadingMore}
           />
         </div>
       )}

@@ -14,7 +14,7 @@ const timeEntrySchema = z.object({
   bc_job_id: z.string().min(1, 'BC Job ID required'),
   bc_task_id: z.string().min(1, 'BC Task ID required'),
   date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/, 'Invalid date format'),
-  hours: z.number().min(0.1).max(24, 'Hours must be between 0.1 and 24'),
+  hours: z.number().min(0.01, 'Minimum time is 36 seconds (0.01 hours)').max(24, 'Hours must be between 0.01 and 24'),
   description: z.string().min(1, 'Description required'),
   start_time: z.string().optional(),
   end_time: z.string().optional(),

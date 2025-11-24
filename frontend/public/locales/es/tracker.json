@@ -19,6 +19,7 @@
   },
   "actions": {
     "start_timer": "Iniciar",
+    "resume_timer": "Reanudar",
     "stop_timer": "Parar",
     "pause_timer": "Pausar",
     "add_manual": "Agregar tiempo manual",
@@ -31,11 +32,12 @@
   },
   "messages": {
     "timer_started": "Timer iniciado",
+    "timer_resumed": "Timer reanudado",
     "timer_paused": "Timer pausado",
     "timer_stopped": "Timer detenido",
     "entry_added": "{{time}} agregado exitosamente",
     "entry_added_for_date": "{{time}} agregado para {{date}}",
-    "min_time": "El tiempo mínimo es 1 minuto",
+    "min_time": "El tiempo mínimo es 36 segundos",
     "max_time": "Una entrada no puede exceder 24 horas",
     "end_after_start": "La hora de fin debe ser posterior al inicio",
     "select_task_required": "Debe seleccionar una tarea",
