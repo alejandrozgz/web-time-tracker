@@ -1,6 +1,6 @@
--- FIX: Update get_pending_sync_entries to include 'draft' and 'error' status entries
--- The function was only returning 'local' entries, but entries with 'draft' or 'error'
--- status that are editable should also be included in pending sync
+-- FIX: Update get_pending_sync_entries to use NEW status names
+-- New statuses: 'not_synced', 'synced', 'error'
+-- This function returns entries that need to be synced to BC
 
 -- Drop the existing function first
 DROP FUNCTION IF EXISTS get_pending_sync_entries(UUID);
@@ -55,9 +55,9 @@ BEGIN
   WHERE te.company_id = p_company_id
     AND te.is_editable = true
     AND (
-      te.bc_sync_status = 'local'     -- New entries not yet synced
-      OR te.bc_sync_status = 'error'  -- Failed entries that need retry
-      OR te.bc_sync_status IS NULL    -- Entries with no status set
+      te.bc_sync_status = 'not_synced'  -- New entries not yet synced
+      OR te.bc_sync_status = 'error'    -- Failed entries that need retry
+      OR te.bc_sync_status IS NULL      -- Entries with no status set (legacy)
     )
   ORDER BY te.date ASC, te.created_at ASC;
 END;
@@ -68,4 +68,4 @@ GRANT EXECUTE ON FUNCTION get_pending_sync_entries(UUID) TO service_role;
 
 -- Add comment for documentation
 COMMENT ON FUNCTION get_pending_sync_entries(UUID) IS
-'Returns all time entries that are pending sync to Business Central. Includes entries with status: local (new), error (failed), or NULL. Draft entries are NOT included as they are already synced to BC but not yet posted. Only editable entries are returned.';
+'Returns all time entries that are pending sync to Business Central. Includes entries with status: not_synced (new), error (failed), or NULL (legacy). Synced entries are NOT included as they are already synced to BC. Only editable entries are returned.';

@@ -10,7 +10,14 @@
       "Bash(git restore:*)",
       "Bash(git checkout:*)",
       "Bash(node test-supabase.js:*)",
-      "Bash(node check-entries.js:*)"
+      "Bash(node check-entries.js:*)",
+      "Bash(npm run build:*)",
+      "Bash(cat:*)",
+      "Bash(tasklist:*)",
+      "Bash(findstr:*)",
+      "Bash(npm install:*)",
+      "Bash(node scripts/generate-favicon.js:*)",
+      "Bash(npm pkg set:*)"
     ],
     "deny": [],
     "ask": []
