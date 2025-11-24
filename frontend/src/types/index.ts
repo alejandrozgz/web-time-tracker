@@ -32,12 +32,9 @@ export interface JobTask {
 
 // 🎯 ENUM PARA ESTADOS DE SYNC BC
 export enum BCSyncStatus {
-  LOCAL = 'local',           // Solo en local, editable
-  MODIFIED = 'modified',     // Modificado tras sync, necesita re-sync
-  DRAFT = 'draft',           // En BC como Journal Line, editable
-  POSTING = 'posting',       // En proceso de registro
-  POSTED = 'posted',         // Registrado en BC, INMUTABLE
-  ERROR = 'error'            // Error de sync
+  NOT_SYNCED = 'not_synced',  // Solo en local, editable
+  SYNCED = 'synced',          // En BC como Journal Line, editable
+  ERROR = 'error'             // Error de sync
 }
 
 // 📊 INTERFAZ ACTUALIZADA PARA TIME ENTRY - USANDO BC IDs DIRECTAMENTE
@@ -112,12 +109,9 @@ export interface SyncResponse {
 
 // 📈 DASHBOARD DE SYNC
 export interface SyncDashboard {
-  company_name: string;
-  local_entries: number;
-  draft_entries: number;
-  posted_entries: number;
+  not_synced_entries: number;
+  synced_entries: number;
   error_entries: number;
-  modified_entries: number;
   pending_hours: number;
 }
 

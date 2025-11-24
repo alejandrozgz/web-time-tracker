@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { z } from 'zod';
 
+/**
+ * Sync Status States:
+ * - 'not_synced': Not synced to BC yet (new entry)
+ * - 'synced': Synced to BC as editable draft
+ * - 'error': Sync failed, needs retry
+ */
+
 // 📋 Validation schema usando BC IDs
 const timeEntrySchema = z.object({
   bc_job_id: z.string().min(1, 'BC Job ID required'),
@@ -203,7 +210,7 @@ export async function POST(
       end_time: validatedData.end_time,
       resource_no: resourceNo,
       bc_batch_name: jobJournalBatch, // ✅ STRICT: Must be configured, no fallback
-      bc_sync_status: 'local', // Initial status
+      bc_sync_status: 'not_synced', // Initial status
       is_editable: true,
       created_at: new Date().toISOString(),
       last_modified_at: new Date().toISOString()
@@ -266,10 +273,11 @@ export async function PATCH(
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
     }
 
-    // No permitir edición si está posted
-    if (!existingEntry.is_editable || existingEntry.bc_sync_status === 'posted') {
-      return NextResponse.json({ 
-        error: 'Cannot modify entry: already posted in Business Central' 
+    // No permitir edición si no es editable
+    // Status: 'not_synced', 'synced', 'error'
+    if (!existingEntry.is_editable) {
+      return NextResponse.json({
+        error: 'Cannot modify entry: not editable'
       }, { status: 400 });
     }
 
@@ -288,8 +296,8 @@ export async function PATCH(
       .update({
         ...filteredData,
         last_modified_at: new Date().toISOString(),
-        // Si ya estaba sincronizada, marcar como modificada
-        ...(existingEntry.bc_sync_status === 'draft' && { bc_sync_status: 'modified' })
+        // Si ya estaba sincronizada, marcar como no sincronizada para que se vuelva a sincronizar
+        ...(existingEntry.bc_sync_status === 'synced' && { bc_sync_status: 'not_synced' })
       })
       .eq('id', entryId)
       .select()
@@ -336,10 +344,11 @@ export async function DELETE(
       return NextResponse.json({ error: 'Time entry not found' }, { status: 404 });
     }
 
-    // ❌ No permitir eliminación si está posted
-    if (!existingEntry.is_editable || existingEntry.bc_sync_status === 'posted') {
-      return NextResponse.json({ 
-        error: 'Cannot delete entry: already posted in Business Central' 
+    // ❌ No permitir eliminación si no es editable
+    // Status: 'not_synced', 'synced', 'error'
+    if (!existingEntry.is_editable) {
+      return NextResponse.json({
+        error: 'Cannot delete entry: not editable'
       }, { status: 400 });
     }
 

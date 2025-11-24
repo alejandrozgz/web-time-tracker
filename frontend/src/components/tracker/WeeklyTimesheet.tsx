@@ -161,9 +161,8 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     if (!existingEntry) return 'border-gray-200 bg-gray-50';
     
     switch (existingEntry.bc_sync_status) {
-      case 'local': return 'border-orange-200 bg-orange-25';
-      case 'draft': return 'border-blue-200 bg-blue-25';
-      case 'posted': return 'border-green-200 bg-green-25';
+      case 'not_synced': return 'border-orange-200 bg-orange-25';
+      case 'synced': return 'border-blue-200 bg-blue-25';
       case 'error': return 'border-red-200 bg-red-25';
       default: return 'border-gray-200 bg-gray-50';
     }

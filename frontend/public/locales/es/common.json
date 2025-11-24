@@ -69,10 +69,8 @@
       "no_entries": "No hay entradas pendientes para sincronizar"
     },
     "badges": {
-      "local": "{{count}} locales",
-      "modified": "{{count}} modificadas", 
-      "errors": "{{count}} errores",
-      "in_bc": "{{count}} en BC"
+      "pending": "{{count}} pendientes",
+      "errors": "{{count}} errores"
     },
     "pending_hours": "{{hours}}h pendientes"
   }

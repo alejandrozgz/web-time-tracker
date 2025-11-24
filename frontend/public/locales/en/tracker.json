@@ -42,9 +42,8 @@
     "time_required": "Must enter start and end time"
   },
   "sync_status": {
-    "local": "Not Synced",
-    "draft": "Synced",
-    "posted": "Posted",
+    "not_synced": "Not Synced",
+    "synced": "Synced",
     "error": "Error"
   }
 }

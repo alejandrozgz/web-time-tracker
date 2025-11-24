@@ -357,7 +357,7 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
   };
 
   const canEditEntry = (entry: TimeEntry) => {
-    return entry.bc_sync_status === 'local' || entry.bc_sync_status === 'modified';
+    return entry.bc_sync_status === 'not_synced' || entry.bc_sync_status === 'error';
   };
 
   const handleLoadMore = () => {
@@ -663,9 +663,8 @@ const ClockifyTracker: React.FC<ClockifyTrackerProps> = ({ assignments, onUpdate
 
                         {/* Badge de estado sync */}
                         <span className={`px-2 py-1 rounded-full text-xs font-medium flex-shrink-0 ${
-                          entry.bc_sync_status === 'local' ? 'bg-orange-100 text-orange-700' :
-                          entry.bc_sync_status === 'draft' ? 'bg-blue-100 text-blue-700' :
-                          entry.bc_sync_status === 'posted' ? 'bg-green-100 text-green-700' :
+                          entry.bc_sync_status === 'not_synced' ? 'bg-orange-100 text-orange-700' :
+                          entry.bc_sync_status === 'synced' ? 'bg-blue-100 text-blue-700' :
                           entry.bc_sync_status === 'error' ? 'bg-red-100 text-red-700' :
                           'bg-gray-100 text-gray-700'
                         }`}>

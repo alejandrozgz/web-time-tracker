@@ -34,7 +34,7 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
 
   // 🔄 Manejar sincronización
   const handleSync = async () => {
-    if (!dashboard || (dashboard.local_entries + dashboard.modified_entries + dashboard.error_entries) === 0) {
+    if (!dashboard || (dashboard.not_synced_entries + dashboard.error_entries) === 0) {
       toast.error(t('common:sync.messages.no_entries'));
       return;
     }
@@ -85,12 +85,11 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
 
     if (!dashboard) return null;
 
-    const pendingCount = dashboard.local_entries + dashboard.modified_entries + dashboard.error_entries;
+    const pendingCount = dashboard.not_synced_entries + dashboard.error_entries;
     const hasErrors = dashboard.error_entries > 0;
-    const hasDrafts = dashboard.draft_entries > 0;
 
     // No hay nada que sincronizar
-    if (pendingCount === 0 && !hasDrafts) {
+    if (pendingCount === 0) {
       return (
         <div className="flex items-center gap-2 px-3 py-2 bg-green-50 text-green-700 rounded-lg text-sm">
           <CheckCircle className="w-4 h-4" />
@@ -134,27 +133,15 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
 
         {/* Indicadores de estado */}
         <div className="flex items-center gap-1 text-sm">
-          {dashboard.local_entries > 0 && (
+          {dashboard.not_synced_entries > 0 && (
             <span className="bg-orange-100 text-orange-700 px-2 py-1 rounded-full text-xs font-medium">
-              {t('common:sync.badges.local', { count: dashboard.local_entries })}
+              {t('common:sync.badges.pending', { count: dashboard.not_synced_entries })}
             </span>
           )}
-          
-          {dashboard.modified_entries > 0 && (
-            <span className="bg-yellow-100 text-yellow-700 px-2 py-1 rounded-full text-xs font-medium">
-              {t('common:sync.badges.modified', { count: dashboard.modified_entries })}
-            </span>
-          )}
-          
+
           {dashboard.error_entries > 0 && (
             <span className="bg-red-100 text-red-700 px-2 py-1 rounded-full text-xs font-medium">
               {t('common:sync.badges.errors', { count: dashboard.error_entries })}
-            </span>
-          )}
-          
-          {dashboard.draft_entries > 0 && (
-            <span className="bg-blue-100 text-blue-700 px-2 py-1 rounded-full text-xs font-medium">
-              {t('common:sync.badges.in_bc', { count: dashboard.draft_entries })}
             </span>
           )}
         </div>

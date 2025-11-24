@@ -69,10 +69,8 @@
       "no_entries": "No pending entries to sync"
     },
     "badges": {
-      "local": "{{count}} local",
-      "modified": "{{count}} modified",
-      "errors": "{{count}} errors", 
-      "in_bc": "{{count}} in BC"
+      "pending": "{{count}} pending",
+      "errors": "{{count}} errors"
     },
     "pending_hours": "{{hours}}h pending"
   }

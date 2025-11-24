@@ -2,6 +2,13 @@ import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BusinessCentralClient } from '@/lib/bc-api';
 
+/**
+ * Sync Status States:
+ * - 'not_synced': Not synced to BC yet (new entry) → sync to BC → 'synced'
+ * - 'synced': Synced to BC as editable draft (can be edited/deleted in BC)
+ * - 'error': Sync failed, needs retry → retry sync → 'synced'
+ */
+
 export async function POST(
   request: NextRequest,
   { params }: { params: Promise<{ tenant: string }> }
@@ -157,8 +164,8 @@ export async function POST(
 		  journalTemplateName: 'PROJECT',
 		  journalBatchName: batchName,
 		  lineNo: 0,
-		  jobNo: entry.job_bc_id,
-		  jobTaskNo: entry.task_bc_id,
+		  jobNo: entry.bc_job_id,
+		  jobTaskNo: entry.bc_task_id,
 		  type: 'Resource',
 		  no: entry.resource_no,
 		  postingDate: entry.date,
@@ -170,11 +177,11 @@ export async function POST(
         await supabaseAdmin
           .from('time_entries')
           .update({
-            bc_sync_status: 'draft',
+            bc_sync_status: 'synced',
             bc_journal_id: bcJournalLine.id,
             bc_batch_name: batchName,
             bc_last_sync_at: new Date().toISOString(),
-            is_editable: true // Still editable as draft
+            is_editable: true // Still editable
           })
           .eq('id', entry.id);
 
