@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
 import { BusinessCentralClient } from '@/lib/bc-api';
+import { logger } from '@/lib/logger';
 
 /**
  * Sync Status States:
@@ -21,12 +22,25 @@ export async function POST(
 
   try {
 
-    console.log('🔄 ===== SYNC TO BC STARTED =====');
-    console.log('🔍 Tenant:', tenantSlug);
-    console.log('🔍 Company ID:', companyId);
+    logger.info('Sync to BC started', { tenantSlug, companyId });
 
     if (!companyId) {
       return NextResponse.json({ error: 'Company ID required' }, { status: 400 });
+    }
+
+    // 🔑 Extract resourceNo from JWT token to filter sync by user
+    const authHeader = request.headers.get('authorization');
+    let resourceNo: string | undefined;
+
+    if (authHeader && authHeader.startsWith('Bearer ')) {
+      try {
+        const token = authHeader.substring(7);
+        const decodedToken = JSON.parse(Buffer.from(token, 'base64').toString());
+        resourceNo = decodedToken.resourceNo;
+        logger.info('Sync requested by user', { resourceNo });
+      } catch (e) {
+        logger.warn('Could not decode token for user filtering', { error: e });
+      }
     }
 
     // Get tenant and company
@@ -70,9 +84,12 @@ export async function POST(
       });
     }
 
-    // 📊 Get pending entries
+    // 📊 Get pending entries (filtered by user's resourceNo)
     const { data: pendingEntries, error: entriesError } = await supabaseAdmin
-      .rpc('get_pending_sync_entries', { p_company_id: companyId });
+      .rpc('get_pending_sync_entries', {
+        p_company_id: companyId,
+        p_resource_no: resourceNo  // 🔑 Filter by current user
+      });
 
     if (entriesError) throw entriesError;
 
@@ -85,7 +102,7 @@ export async function POST(
         company_id: companyId,
         operation_type: 'sync_to_bc',
         log_level: 'info',
-        message: 'No entries to sync',
+        message: resourceNo ? `No entries to sync for user ${resourceNo}` : 'No entries to sync',
         duration_ms: duration,
         entries_processed: 0,
         entries_succeeded: 0,
@@ -96,11 +113,11 @@ export async function POST(
         success: true,
         synced_entries: 0,
         failed_entries: 0,
-        message: 'No entries to sync'
+        message: resourceNo ? `No entries to sync for user ${resourceNo}` : 'No entries to sync'
       });
     }
 
-    console.log(`🔍 Found ${pendingEntries.length} entries to sync`);
+    logger.info('Pending entries found', { count: pendingEntries.length, companyId, resourceNo });
 
     // 🚀 Initialize BC Client
     const bcClient = new BusinessCentralClient(tenant, company);
@@ -119,7 +136,7 @@ export async function POST(
       const batchName = entry.bc_batch_name;
 
       if (!batchName) {
-        console.error(`❌ Entry ${entry.id} has no batch name configured`);
+        logger.error('Entry missing batch name', { entryId: entry.id, resourceNo: entry.resource_no });
 
         // Mark as error
         await supabaseAdmin
@@ -157,24 +174,47 @@ export async function POST(
       }
 
       try {
-        console.log(`🔄 Syncing entry ${entry.id}: ${entry.description} to batch ${batchName}`);
+        logger.debug('Syncing entry to BC', { entryId: entry.id, batch: batchName, description: entry.description });
 
-        // 📤 Create Job Journal Line in BC
-        const bcJournalLine = await bcClient.createJobJournalLine({
-		  journalTemplateName: 'PROJECT',
-		  journalBatchName: batchName,
-		  lineNo: 0,
-		  jobNo: entry.bc_job_id,
-		  jobTaskNo: entry.bc_task_id,
-		  type: 'Resource',
-		  no: entry.resource_no,
-		  postingDate: entry.date,
-		  quantity: parseFloat(entry.hours),
-		  description: entry.description
-		});
+        let bcJournalLine;
 
-        // ✅ Update local status
-        await supabaseAdmin
+        // Check if entry was previously synced (has bc_journal_id)
+        if (entry.bc_journal_id) {
+          logger.debug('Updating existing BC journal line', { entryId: entry.id, journalId: entry.bc_journal_id });
+
+          // 📝 Update existing Job Journal Line in BC
+          bcJournalLine = await bcClient.updateJobJournalLine({
+            journalTemplateName: 'PROJECT',
+            journalBatchName: batchName,
+            id: entry.bc_journal_id,
+            jobNo: entry.bc_job_id,
+            jobTaskNo: entry.bc_task_id,
+            type: 'Resource',
+            no: entry.resource_no,
+            postingDate: entry.date,
+            quantity: parseFloat(entry.hours),
+            description: entry.description
+          });
+        } else {
+          logger.debug('Creating new BC journal line', { entryId: entry.id });
+
+          // 📤 Create new Job Journal Line in BC
+          bcJournalLine = await bcClient.createJobJournalLine({
+            journalTemplateName: 'PROJECT',
+            journalBatchName: batchName,
+            lineNo: 0,
+            jobNo: entry.bc_job_id,
+            jobTaskNo: entry.bc_task_id,
+            type: 'Resource',
+            no: entry.resource_no,
+            postingDate: entry.date,
+            quantity: parseFloat(entry.hours),
+            description: entry.description
+          });
+        }
+
+        // ✅ Update local status - CRITICAL: Update immediately after BC success to prevent duplicates
+        const { error: updateError, data: updatedData } = await supabaseAdmin
           .from('time_entries')
           .update({
             bc_sync_status: 'synced',
@@ -183,7 +223,24 @@ export async function POST(
             bc_last_sync_at: new Date().toISOString(),
             is_editable: true // Still editable
           })
-          .eq('id', entry.id);
+          .eq('id', entry.id)
+          .select();
+
+        logger.debug('Supabase update result', {
+          entryId: entry.id,
+          hasError: !!updateError,
+          error: updateError,
+          updatedCount: updatedData?.length || 0
+        });
+
+        if (updateError) {
+          logger.error('CRITICAL: Failed to update entry status after BC sync', {
+            entryId: entry.id,
+            journalId: bcJournalLine.id,
+            error: updateError
+          });
+          throw new Error(`Failed to update entry status: ${updateError.message}`);
+        }
 
         // Track batch usage
         if (!batchesUsed[batchName]) {
@@ -193,10 +250,16 @@ export async function POST(
         batchesUsed[batchName].hours += parseFloat(entry.hours);
 
         syncedCount++;
-        console.log(`✅ Entry ${entry.id} synced successfully to batch ${batchName}`);
+        logger.info('✅ Entry synced successfully to BC', {
+          entryId: entry.id,
+          batch: batchName,
+          journalId: bcJournalLine.id,
+          lineNo: bcJournalLine.lineNo,
+          updatedInDb: true
+        });
 
       } catch (error) {
-        console.error(`❌ Failed to sync entry ${entry.id}:`, error);
+        logger.error('Failed to sync entry to BC', { entryId: entry.id, error });
 
         const errorMessage = error instanceof Error ? error.message : 'Unknown error';
         const errorCode = (error as any)?.code || (error as any)?.error?.code;
@@ -270,7 +333,7 @@ export async function POST(
         if (batchData?.id) {
           batchIds.push(batchData.id);
         }
-        console.log(`📦 Created batch record for ${batchName}: ${batchInfo.count} entries, ${batchInfo.hours.toFixed(2)}h`);
+        logger.info('Batch record created', { batchName, entries: batchInfo.count, hours: batchInfo.hours.toFixed(2) });
       }
     }
 
@@ -297,9 +360,12 @@ export async function POST(
       }
     });
 
-    console.log('✅ ===== SYNC TO BC COMPLETED =====');
-    console.log(`📊 Synced: ${syncedCount}, Failed: ${failedCount}`);
-    console.log(`📦 Batches used: ${batchNamesUsed.join(', ')}`);
+    logger.info('Sync to BC completed', {
+      synced: syncedCount,
+      failed: failedCount,
+      batches: batchNamesUsed.join(', '),
+      durationMs: duration
+    });
 
     return NextResponse.json({
       success: true,
@@ -311,7 +377,7 @@ export async function POST(
     });
 
   } catch (error) {
-    console.error('❌ Sync error:', error);
+    logger.error('Sync to BC failed with critical error', { error, tenantSlug, companyId });
     const errorMessage = error instanceof Error ? error.message : 'Unknown error';
     const duration = Date.now() - startTime;
 

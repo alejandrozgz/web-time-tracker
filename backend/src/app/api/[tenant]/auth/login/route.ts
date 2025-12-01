@@ -97,6 +97,9 @@ export async function POST(
         console.log(`📋 jobJournalBatch value:`, bcResource.jobJournalBatch);
         console.log(`📋 jobJournalBatch type:`, typeof bcResource.jobJournalBatch);
 
+        // Note: User activity is tracked via time_entries.resource_no and time_entries.last_modified_at
+        // No separate users table needed
+
         // Create JWT token with BC resource info including jobJournalBatch
         const tokenPayload = {
           tenantId: tenant.id,

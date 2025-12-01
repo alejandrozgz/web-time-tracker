@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withAdminAuth } from '@/middleware/adminAuth';
 
 // GET /api/admin/tenants/[id] - Get single tenant
-export async function GET(
+async function getHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -37,7 +38,7 @@ export async function GET(
 }
 
 // PATCH /api/admin/tenants/[id] - Update tenant
-export async function PATCH(
+async function patchHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -82,7 +83,7 @@ export async function PATCH(
 }
 
 // DELETE /api/admin/tenants/[id] - Delete tenant
-export async function DELETE(
+async function deleteHandler(
   request: NextRequest,
   { params }: { params: Promise<{ id: string }> }
 ) {
@@ -120,3 +121,7 @@ export async function DELETE(
     );
   }
 }
+
+export const GET = withAdminAuth(getHandler);
+export const PATCH = withAdminAuth(patchHandler);
+export const DELETE = withAdminAuth(deleteHandler);

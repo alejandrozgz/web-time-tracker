@@ -1,14 +1,14 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withAdminAuth } from '@/middleware/adminAuth';
 
 // GET /api/admin/dashboard - Get admin dashboard statistics
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     // Run all queries in parallel
     const [
       tenantsResult,
       companiesResult,
-      resourcesResult,
       timeEntriesResult,
       syncLogsResult
     ] = await Promise.all([
@@ -22,15 +22,10 @@ export async function GET(request: NextRequest) {
         .from('companies')
         .select('id', { count: 'exact' }),
 
-      // Resources (users) stats
-      supabaseAdmin
-        .from('resources')
-        .select('id, is_active', { count: 'exact' }),
-
-      // Time entries stats
+      // Time entries stats (includes resource_no for user counting)
       supabaseAdmin
         .from('time_entries')
-        .select('id, hours, bc_sync_status', { count: 'exact' }),
+        .select('id, hours, bc_sync_status, resource_no, last_modified_at', { count: 'exact' }),
 
       // Recent sync logs
       supabaseAdmin
@@ -44,23 +39,38 @@ export async function GET(request: NextRequest) {
     const totalTenants = tenantsResult.count || 0;
     const activeTenants = tenants.filter(t => t.is_active).length;
 
-    // Process resources
-    const resources = resourcesResult.data || [];
-    const totalUsers = resourcesResult.count || 0;
-    const activeUsers = resources.filter(r => r.is_active).length;
-
     // Process time entries
     const timeEntries = timeEntriesResult.data || [];
     const totalTimeEntries = timeEntriesResult.count || 0;
     const totalHoursTracked = timeEntries.reduce((sum, entry) => sum + (parseFloat(entry.hours as any) || 0), 0);
 
-    // Count entries by status
+    // Count unique users from time entries
+    const uniqueResourceNos = new Set(
+      timeEntries
+        .filter(e => e.resource_no)
+        .map(e => e.resource_no)
+    );
+    const totalUsers = uniqueResourceNos.size;
+
+    // Count active users (with activity in last 30 days)
+    const thirtyDaysAgo = new Date(Date.now() - 30 * 24 * 60 * 60 * 1000).toISOString();
+    const activeResourceNos = new Set(
+      timeEntries
+        .filter(e => e.resource_no && e.last_modified_at >= thirtyDaysAgo)
+        .map(e => e.resource_no)
+    );
+    const activeUsers = activeResourceNos.size;
+
+    // Count entries by status (new simplified schema)
     const entriesByStatus = {
-      local: timeEntries.filter(e => e.bc_sync_status === 'local').length,
-      draft: timeEntries.filter(e => e.bc_sync_status === 'draft').length,
-      posted: timeEntries.filter(e => e.bc_sync_status === 'posted').length,
+      not_synced: timeEntries.filter(e => e.bc_sync_status === 'not_synced').length,
+      synced: timeEntries.filter(e => e.bc_sync_status === 'synced').length,
       error: timeEntries.filter(e => e.bc_sync_status === 'error').length,
-      modified: timeEntries.filter(e => e.bc_sync_status === 'modified').length
+      // Legacy status counts (should be 0 after cleanup migration)
+      other: timeEntries.filter(e =>
+        e.bc_sync_status &&
+        !['not_synced', 'synced', 'error'].includes(e.bc_sync_status)
+      ).length
     };
 
     // Process sync logs
@@ -91,3 +101,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAdminAuth(handler);

@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withAdminAuth } from '@/middleware/adminAuth';
 
 // GET /api/admin/companies
-export async function GET(request: NextRequest) {
+async function getHandler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get('tenant_id');
@@ -47,7 +48,7 @@ export async function GET(request: NextRequest) {
 }
 
 // POST /api/admin/companies
-export async function POST(request: NextRequest) {
+async function postHandler(request: NextRequest) {
   try {
     const data = await request.json();
 
@@ -81,3 +82,6 @@ export async function POST(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAdminAuth(getHandler);
+export const POST = withAdminAuth(postHandler);

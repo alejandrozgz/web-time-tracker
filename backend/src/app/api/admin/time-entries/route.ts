@@ -1,8 +1,9 @@
 import { NextRequest, NextResponse } from 'next/server';
 import { supabaseAdmin } from '@/lib/supabase';
+import { withAdminAuth } from '@/middleware/adminAuth';
 
 // GET /api/admin/time-entries - Get all time entries with filters
-export async function GET(request: NextRequest) {
+async function handler(request: NextRequest) {
   try {
     const { searchParams } = new URL(request.url);
     const tenantId = searchParams.get('tenant_id');
@@ -85,3 +86,5 @@ export async function GET(request: NextRequest) {
     );
   }
 }
+
+export const GET = withAdminAuth(handler);
