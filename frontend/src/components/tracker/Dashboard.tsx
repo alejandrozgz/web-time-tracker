@@ -38,10 +38,10 @@ const Dashboard: React.FC = () => {
   const [currentWeek, setCurrentWeek] = useState(getWeekDates(new Date()));
   const [loading, setLoading] = useState(true);
   const [loadingEntries, setLoadingEntries] = useState(false);
-  const [forceUpdate, setForceUpdate] = useState(0);
   const [currentPage, setCurrentPage] = useState(1);
   const [hasMore, setHasMore] = useState(true);
   const [loadingMore, setLoadingMore] = useState(false);
+  const [syncRefreshTrigger, setSyncRefreshTrigger] = useState(0); // Trigger for SyncButton refresh
   const ENTRIES_PER_PAGE = 20;
 
   // Debug: Watch assignments changes
@@ -56,13 +56,6 @@ const Dashboard: React.FC = () => {
     console.log('🔍 Dashboard - company changed:', company);
   }, [company]);
 
-  // Debug: Force re-render when jobs arrive
-  useEffect(() => {
-    if (assignments.jobs.length > 0) {
-      console.log('🔍 Dashboard - forcing re-render with jobs:', assignments.jobs.length);
-      setForceUpdate(prev => prev + 1);
-    }
-  }, [assignments]);
 
   const loadAssignments = useCallback(async () => {
     if (!company) {
@@ -122,7 +115,7 @@ const Dashboard: React.FC = () => {
   }, [company, currentWeek.start, currentWeek.end]);
 
   const loadRecentEntries = useCallback(async (page = 1, append = false) => {
-    if (!company) return;
+    if (!company || !user) return;
 
     try {
       setLoadingMore(true);
@@ -133,7 +126,8 @@ const Dashboard: React.FC = () => {
         undefined, // No from date - get all entries
         undefined, // No to date - get all entries including future
         ENTRIES_PER_PAGE,
-        offset
+        offset,
+        user.resourceNo // Filter by current user's resource
       );
 
       if (append) {
@@ -150,7 +144,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoadingMore(false);
     }
-  }, [company, ENTRIES_PER_PAGE]);
+  }, [company, user, ENTRIES_PER_PAGE]);
 
   const handleLoadMore = () => {
     const nextPage = currentPage + 1;
@@ -158,10 +152,40 @@ const Dashboard: React.FC = () => {
     loadRecentEntries(nextPage, true);
   };
 
+  // Load all data (used on initial load or sync)
   const loadData = useCallback(async () => {
     await Promise.all([loadAssignments(), loadTimeEntries(), loadRecentEntries(1, false)]);
     setCurrentPage(1);
   }, [loadAssignments, loadTimeEntries, loadRecentEntries]);
+
+  // Refresh approval status from BC
+  const refreshApprovalStatus = useCallback(async () => {
+    if (!company) return;
+
+    try {
+      console.log('🔄 Refreshing approval status from BC...');
+      const result = await apiService.refreshApprovalStatus(company.id);
+      console.log('✅ Approval status refreshed:', result);
+
+      if (result.updated_entries > 0) {
+        console.log(`📊 ${result.updated_entries} entries updated with new approval status`);
+        // Reload entries to show updated statuses
+        await loadRecentEntries(1, false);
+        setCurrentPage(1);
+      }
+    } catch (error) {
+      console.error('❌ Error refreshing approval status:', error);
+      // Don't show error to user - this is a background operation
+    }
+  }, [company, loadRecentEntries]);
+
+  // Refresh only time entries (used when adding/editing entries)
+  const refreshEntries = useCallback(async () => {
+    await Promise.all([loadTimeEntries(), loadRecentEntries(1, false)]);
+    setCurrentPage(1);
+    // Trigger SyncButton refresh
+    setSyncRefreshTrigger(prev => prev + 1);
+  }, [loadTimeEntries, loadRecentEntries]);
 
   // Load assignments only when user/company changes
   useEffect(() => {
@@ -186,14 +210,11 @@ const Dashboard: React.FC = () => {
       console.log('🔍 Dashboard - tracker tab active, loading recent entries...');
       loadRecentEntries(1, false);
       setCurrentPage(1);
-    }
-  }, [user, company, activeTab, loadRecentEntries]);
 
-  const navigateWeek = (direction: 'prev' | 'next') => {
-    const newDate = new Date(currentWeek.start);
-    newDate.setDate(newDate.getDate() + (direction === 'next' ? 7 : -7));
-    setCurrentWeek(getWeekDates(newDate));
-  };
+      // Also refresh approval status from BC
+      refreshApprovalStatus();
+    }
+  }, [user, company, activeTab, loadRecentEntries, refreshApprovalStatus]);
 
   const setWeekByDate = (date: Date) => {
     setCurrentWeek(getWeekDates(date));
@@ -218,43 +239,47 @@ const Dashboard: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      {/* Dashboard Header con Sync Button */}
+      {/* Dashboard Header con Sync Button - Responsive */}
       <div className="bg-white rounded-lg shadow-sm border border-gray-200 p-4">
-        <div className="flex items-center justify-between mb-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 mb-4">
           {/* Company Info */}
-          <div>
-            <h1 className="text-xl font-bold text-gray-900">
+          <div className="flex-1 min-w-0">
+            <h1 className="text-lg sm:text-xl font-bold text-gray-900 truncate">
               {company?.name || t('dashboard:title')}
             </h1>
-            <p className="text-sm text-gray-500">
+            <p className="text-xs sm:text-sm text-gray-500 truncate">
               {user?.displayName} • {t('dashboard:summary.projects_count', { count: assignments.jobs.length })} • {t('dashboard:summary.tasks_count', { count: assignments.tasks.length })}
             </p>
           </div>
 
           {/* Sync Button */}
           {company && (
-            <SyncButton 
-              companyId={company.id} 
-              onSyncComplete={loadData}
-            />
+            <div className="flex-shrink-0">
+              <SyncButton
+                companyId={company.id}
+                onSyncComplete={loadData}
+                refreshTrigger={syncRefreshTrigger}
+              />
+            </div>
           )}
         </div>
 
-        {/* Navigation Tabs */}
+        {/* Navigation Tabs - Responsive */}
         <div className="border-b border-gray-200">
-          <div className="flex space-x-8">
+          <div className="flex space-x-4 sm:space-x-8 -mb-px overflow-x-auto">
             {tabs.map((tab) => (
               <button
                 key={tab.id}
                 onClick={() => setActiveTab(tab.id)}
-                className={`flex items-center py-2 px-1 border-b-2 font-medium text-sm transition-colors ${
+                className={`flex items-center py-2 px-1 border-b-2 font-medium text-xs sm:text-sm transition-colors whitespace-nowrap ${
                   activeTab === tab.id
                     ? 'border-blue-500 text-blue-600'
                     : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
                 }`}
               >
-                <tab.icon className="h-4 w-4 mr-2" />
-                {tab.label}
+                <tab.icon className="h-4 w-4 mr-1 sm:mr-2" />
+                <span className="hidden sm:inline">{tab.label}</span>
+                <span className="sm:hidden">{tab.id === 'tracker' ? 'Timer' : 'Week'}</span>
               </button>
             ))}
           </div>
@@ -267,7 +292,7 @@ const Dashboard: React.FC = () => {
           {/* Tracker Section */}
           <ClockifyTracker
             assignments={assignments}
-            onUpdate={loadData}
+            onUpdate={refreshEntries}
             companyId={company?.id || ''}
           />
 
@@ -275,19 +300,19 @@ const Dashboard: React.FC = () => {
           <RecentEntries
             entries={recentEntries}
             assignments={assignments}
-            onUpdate={loadData}
+            onUpdate={refreshEntries}
             onLoadMore={handleLoadMore}
             hasMore={hasMore}
             loadingMore={loadingMore}
           />
         </div>
       )}
-      
+
       {activeTab === 'timesheet' && (
         <WeeklyTimesheet
           assignments={assignments}
           timeEntries={timeEntries}
-          onUpdate={loadData}
+          onUpdate={refreshEntries}
           companyId={company?.id || ''}
           onWeekChange={setWeekByDate}
           loading={loadingEntries}
