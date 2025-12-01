@@ -19,7 +19,11 @@
       "Bash(node scripts/generate-favicon.js:*)",
       "Bash(npm pkg set:*)",
       "Bash(npx supabase:*)",
-      "Bash(pkill:*)"
+      "Bash(pkill:*)",
+      "Bash(npx tsc:*)",
+      "Bash(node scripts/create-admin.js:*)",
+      "Bash(timeout 5 curl:*)",
+      "Bash(where:*)"
     ],
     "deny": [],
     "ask": []

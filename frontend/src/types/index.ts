@@ -37,36 +37,47 @@ export enum BCSyncStatus {
   ERROR = 'error'             // Error de sync
 }
 
+// 🎯 ENUM PARA APPROVAL STATUS
+export enum ApprovalStatus {
+  PENDING = 'pending',
+  APPROVED = 'approved',
+  REJECTED = 'rejected'
+}
+
 // 📊 INTERFAZ ACTUALIZADA PARA TIME ENTRY - USANDO BC IDs DIRECTAMENTE
 export interface TimeEntry {
   id: string;
-  
+
   // 🔗 BC IDs DIRECTOS (no foreign keys)
   bc_job_id: string;         // Business Central Job ID
   bc_task_id: string;        // Business Central Task ID
   resource_no: string;       // Business Central Resource No
-  
+
   // 📅 DATOS DE TIEMPO
   date: string;
   hours: number;
   description: string;
   start_time?: string;
   end_time?: string;
-  
+
   // 🔄 CAMPOS BC SYNC
-  bc_sync_status: BCSyncStatus;
+  bc_sync_status: string;     // Status: 'not_synced', 'synced', 'error' (or legacy: 'modified', 'pending', 'failed', 'posted')
   bc_journal_id?: string;     // ID del Journal Line en BC
   bc_batch_name?: string;     // Nombre del batch en BC
   bc_ledger_id?: string;      // ID del Ledger Entry tras POST
-  
+
+  // ✅ CAMPOS DE APROBACIÓN (desde BC)
+  approval_status?: string;   // 'pending', 'approved', 'rejected'
+  bc_comments?: string;       // Comentarios desde BC
+
   // ⏰ TIMESTAMPS
   created_at: string;
   last_modified_at: string;
   bc_last_sync_at?: string;
-  
+
   // 🎛️ FLAGS
   is_editable: boolean;       // false si está posted
-  
+
   // 📊 DATOS JOINED DEL BACKEND (para display) - OPCIONAL
   job_name?: string;          // Para mostrar nombre del job
   task_description?: string;  // Para mostrar descripción de la tarea

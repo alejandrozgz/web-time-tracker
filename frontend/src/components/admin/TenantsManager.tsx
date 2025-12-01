@@ -40,6 +40,20 @@ const TenantsManager: React.FC = () => {
     }
   };
 
+  const handleUpdate = async (id: string, formData: Partial<CreateTenantData>) => {
+    try {
+      // Remove slug from update data since it can't be changed
+      const { slug, ...updateData } = formData;
+      await adminApiService.updateTenant(id, updateData);
+      toast.success('Tenant updated successfully');
+      setEditingTenant(null);
+      loadTenants();
+    } catch (error: any) {
+      console.error('Error updating tenant:', error);
+      toast.error(error.response?.data?.error || 'Failed to update tenant');
+    }
+  };
+
   const handleDelete = async (id: string) => {
     if (!window.confirm('Are you sure you want to delete this tenant?')) return;
 
@@ -153,6 +167,7 @@ const TenantsManager: React.FC = () => {
             setEditingTenant(null);
           }}
           onSubmit={handleCreate}
+          onUpdate={handleUpdate}
         />
       )}
     </div>
@@ -164,7 +179,8 @@ const TenantFormModal: React.FC<{
   tenant: TenantFull | null;
   onClose: () => void;
   onSubmit: (data: CreateTenantData) => void;
-}> = ({ tenant, onClose, onSubmit }) => {
+  onUpdate: (id: string, data: Partial<CreateTenantData>) => void;
+}> = ({ tenant, onClose, onSubmit, onUpdate }) => {
   const [formData, setFormData] = useState<CreateTenantData>({
     slug: tenant?.slug || '',
     name: tenant?.name || '',
@@ -178,7 +194,12 @@ const TenantFormModal: React.FC<{
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onSubmit(formData);
+    // If editing, call onUpdate; otherwise call onSubmit (create)
+    if (tenant) {
+      onUpdate(tenant.id, formData);
+    } else {
+      onSubmit(formData);
+    }
   };
 
   return (

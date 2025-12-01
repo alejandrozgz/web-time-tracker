@@ -8,18 +8,14 @@ import { BCSyncStatus, SyncResponse, SyncDashboard } from '../../types';
 interface SyncButtonProps {
   onSyncComplete?: () => void;
   companyId: string;
+  refreshTrigger?: number; // Prop to trigger refresh from parent
 }
 
-const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) => {
+const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId, refreshTrigger }) => {
   const { t } = useTranslation(['common']);
   const [dashboard, setDashboard] = useState<SyncDashboard | null>(null);
   const [syncing, setSyncing] = useState(false);
   const [loading, setLoading] = useState(true);
-
-  // 📊 Cargar dashboard de sync
-  useEffect(() => {
-    loadSyncDashboard();
-  }, [companyId]);
 
   const loadSyncDashboard = async () => {
     try {
@@ -31,6 +27,12 @@ const SyncButton: React.FC<SyncButtonProps> = ({ onSyncComplete, companyId }) =>
       setLoading(false);
     }
   };
+
+  // 📊 Cargar dashboard de sync
+  useEffect(() => {
+    loadSyncDashboard();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [companyId, refreshTrigger]); // Add refreshTrigger dependency
 
   // 🔄 Manejar sincronización
   const handleSync = async () => {

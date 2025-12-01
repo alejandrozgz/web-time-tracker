@@ -5,7 +5,6 @@ import {
   Building2,
   Server,
   Clock,
-  TrendingUp,
   AlertCircle,
   CheckCircle,
   RefreshCw
@@ -182,7 +181,7 @@ const AdminDashboard: React.FC = () => {
       {/* Quick Links */}
       <div className="bg-white p-6 rounded-lg shadow">
         <h2 className="text-lg font-semibold text-gray-800 mb-4">Quick Actions</h2>
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3">
           <Link
             to="/admin/tenants"
             className="p-4 border-2 border-gray-200 rounded-lg hover:border-blue-500 hover:bg-blue-50 transition-all text-center"
@@ -196,6 +195,13 @@ const AdminDashboard: React.FC = () => {
           >
             <Building2 className="w-6 h-6 mx-auto mb-2 text-gray-600" />
             <p className="text-sm font-medium text-gray-800">View Companies</p>
+          </Link>
+          <Link
+            to="/admin/user-activity"
+            className="p-4 border-2 border-gray-200 rounded-lg hover:border-green-500 hover:bg-green-50 transition-all text-center"
+          >
+            <Users className="w-6 h-6 mx-auto mb-2 text-gray-600" />
+            <p className="text-sm font-medium text-gray-800">User Activity</p>
           </Link>
           <Link
             to="/admin/time-entries"

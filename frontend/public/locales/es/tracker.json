@@ -23,7 +23,9 @@
     "stop_timer": "Parar",
     "pause_timer": "Pausar",
     "add_manual": "Agregar tiempo manual",
-    "use_for_timer": "Usar para timer"
+    "use_for_timer": "Usar para timer",
+    "edit_entry": "Editar entrada",
+    "delete_entry": "Eliminar entrada"
   },
   "recent_entries": {
     "title": "Entradas recientes",
@@ -37,15 +39,27 @@
     "timer_stopped": "Timer detenido",
     "entry_added": "{{time}} agregado exitosamente",
     "entry_added_for_date": "{{time}} agregado para {{date}}",
+    "entry_updated": "Entrada actualizada exitosamente",
+    "entry_deleted": "Entrada eliminada exitosamente",
     "min_time": "El tiempo mínimo es 36 segundos",
     "max_time": "Una entrada no puede exceder 24 horas",
     "end_after_start": "La hora de fin debe ser posterior al inicio",
     "select_task_required": "Debe seleccionar una tarea",
-    "time_required": "Debe ingresar hora de inicio y fin"
+    "time_required": "Debe ingresar hora de inicio y fin",
+    "cannot_edit_synced": "No se puede editar (ya sincronizado)",
+    "cannot_delete_synced": "No se puede eliminar (ya sincronizado)",
+    "confirm_delete": "¿Está seguro que desea eliminar esta entrada?"
   },
   "sync_status": {
     "not_synced": "No Sincronizado",
     "synced": "Sincronizado",
     "error": "Error"
+  },
+  "approval_status": {
+    "pending": "Pendiente de Revisión",
+    "approved": "Aprobado",
+    "rejected": "Rechazado",
+    "awaiting": "Esperando aprobación en BC",
+    "note_from_bc": "Nota de BC"
   }
 }

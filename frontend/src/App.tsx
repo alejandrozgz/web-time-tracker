@@ -15,6 +15,8 @@ import TenantsManager from './components/admin/TenantsManager';
 import CompaniesManager from './components/admin/CompaniesManager';
 import TimeEntriesViewer from './components/admin/TimeEntriesViewer';
 import AdminSyncLogsViewer from './components/admin/AdminSyncLogsViewer';
+import UserActivityAnalytics from './components/admin/UserActivityAnalytics';
+import SystemLogsViewer from './components/admin/SystemLogsViewer';
 import { useAdminAuth } from './contexts/AdminAuthContext';
 
 // Wrapper component to use the hook
@@ -58,6 +60,8 @@ const App: React.FC = () => {
             <Route path="companies" element={<CompaniesManager />} />
             <Route path="time-entries" element={<TimeEntriesViewer />} />
             <Route path="sync-logs" element={<AdminSyncLogsViewer />} />
+            <Route path="user-activity" element={<UserActivityAnalytics />} />
+            <Route path="system-logs" element={<SystemLogsViewer />} />
           </Route>
 
           {/* Rutas con tenant slug */}

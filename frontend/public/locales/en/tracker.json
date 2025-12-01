@@ -23,7 +23,9 @@
     "stop_timer": "Stop",
     "pause_timer": "Pause",
     "add_manual": "Add manual time",
-    "use_for_timer": "Use for timer"
+    "use_for_timer": "Use for timer",
+    "edit_entry": "Edit entry",
+    "delete_entry": "Delete entry"
   },
   "recent_entries": {
     "title": "Recent entries",
@@ -37,15 +39,27 @@
     "timer_stopped": "Timer stopped",
     "entry_added": "{{time}} added successfully",
     "entry_added_for_date": "{{time}} added for {{date}}",
+    "entry_updated": "Entry updated successfully",
+    "entry_deleted": "Entry deleted successfully",
     "min_time": "Minimum time is 36 seconds",
     "max_time": "An entry cannot exceed 24 hours",
     "end_after_start": "End time must be after start time",
     "select_task_required": "Must select a task",
-    "time_required": "Must enter start and end time"
+    "time_required": "Must enter start and end time",
+    "cannot_edit_synced": "Cannot edit (already synced)",
+    "cannot_delete_synced": "Cannot delete (already synced)",
+    "confirm_delete": "Are you sure you want to delete this entry?"
   },
   "sync_status": {
     "not_synced": "Not Synced",
     "synced": "Synced",
     "error": "Error"
+  },
+  "approval_status": {
+    "pending": "Pending Review",
+    "approved": "Approved",
+    "rejected": "Rejected",
+    "awaiting": "Awaiting approval in BC",
+    "note_from_bc": "Note from BC"
   }
 }

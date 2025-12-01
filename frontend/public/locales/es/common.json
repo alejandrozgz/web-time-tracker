@@ -20,6 +20,12 @@
     "sync_to_bc": "Sincronizar con BC",
     "retry": "Reintentar Sync"
   },
+  "actions": {
+    "save": "Guardar",
+    "cancel": "Cancelar",
+    "edit": "Editar",
+    "delete": "Eliminar"
+  },
   "status": {
     "loading": "Cargando...",
     "saving": "Guardando...",

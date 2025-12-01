@@ -34,6 +34,31 @@ class AdminApiService {
     }
   }
 
+  // ========== AUTH ==========
+
+  async login(username: string, password: string) {
+    const response = await this.client.post('/auth/login', { username, password });
+    return response.data as {
+      success: boolean;
+      token: string;
+      user: {
+        id: string;
+        username: string;
+      };
+    };
+  }
+
+  async verifyToken() {
+    const response = await this.client.get('/auth/verify');
+    return response.data as {
+      success: boolean;
+      user: {
+        id: string;
+        username: string;
+      };
+    };
+  }
+
   // ========== TENANTS ==========
 
   async getTenants(filters?: { is_active?: boolean; search?: string; limit?: number; offset?: number }) {
@@ -85,6 +110,15 @@ class AdminApiService {
     return response.data.company as CompanyFull;
   }
 
+  async updateCompany(id: string, data: UpdateCompanyData) {
+    const response = await this.client.patch(`/companies/${id}`, data);
+    return response.data.company as CompanyFull;
+  }
+
+  async deleteCompany(id: string) {
+    await this.client.delete(`/companies/${id}`);
+  }
+
   // ========== TIME ENTRIES ==========
 
   async getTimeEntries(filters?: AdminTimeEntryFilters) {
@@ -107,6 +141,34 @@ class AdminApiService {
   async getDashboardStats() {
     const response = await this.client.get('/dashboard');
     return response.data as AdminDashboardStats;
+  }
+
+  // ========== USER ACTIVITY ==========
+
+  async getUserActivity(period: number = 30) {
+    const response = await this.client.get(`/user-activity?period=${period}`);
+    return response.data as {
+      period: number;
+      detailedStats: Array<{
+        tenant_id: string;
+        tenant_name: string;
+        company_id: string;
+        company_name: string;
+        resource_no: string;
+        last_activity: string | null;
+        days_since_activity: number | null;
+        total_entries: number;
+        total_hours: number;
+      }>;
+      summaryStats: Array<{
+        tenant_id: string;
+        tenant_name: string;
+        total_users: number;
+        active_users: number;
+        total_entries: number;
+        total_hours: number;
+      }>;
+    };
   }
 }
 

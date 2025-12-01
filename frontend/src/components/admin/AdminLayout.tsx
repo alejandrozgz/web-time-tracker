@@ -1,6 +1,6 @@
 import React from 'react';
 import { Link, Outlet, useLocation, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Server, Building2, Clock, LogOut, FileText } from 'lucide-react';
+import { LayoutDashboard, Server, Building2, Clock, LogOut, FileText, Users, ScrollText } from 'lucide-react';
 import { useAdminAuth } from '../../contexts/AdminAuthContext';
 
 const AdminLayout: React.FC = () => {
@@ -18,8 +18,10 @@ const AdminLayout: React.FC = () => {
     { path: '/admin', label: 'Dashboard', icon: LayoutDashboard },
     { path: '/admin/tenants', label: 'Tenants', icon: Server },
     { path: '/admin/companies', label: 'Companies', icon: Building2 },
+    { path: '/admin/user-activity', label: 'User Activity', icon: Users },
     { path: '/admin/time-entries', label: 'Time Entries', icon: Clock },
     { path: '/admin/sync-logs', label: 'Sync Logs', icon: FileText },
+    { path: '/admin/system-logs', label: 'System Logs', icon: ScrollText },
   ];
 
   return (

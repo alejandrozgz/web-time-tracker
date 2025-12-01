@@ -56,15 +56,15 @@ const TimeEntriesViewer: React.FC = () => {
     }
   };
 
-  const getSyncStatusBadge = (status: BCSyncStatus) => {
-    const colors: Record<BCSyncStatus, string> = {
-      [BCSyncStatus.NOT_SYNCED]: 'bg-orange-100 text-orange-800',
-      [BCSyncStatus.SYNCED]: 'bg-blue-100 text-blue-800',
-      [BCSyncStatus.ERROR]: 'bg-red-100 text-red-800'
+  const getSyncStatusBadge = (status: string) => {
+    const colors: Record<string, string> = {
+      'not_synced': 'bg-orange-100 text-orange-800',
+      'synced': 'bg-blue-100 text-blue-800',
+      'error': 'bg-red-100 text-red-800'
     };
 
     return (
-      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status]}`}>
+      <span className={`px-2 py-1 rounded-full text-xs font-medium ${colors[status] || 'bg-gray-100 text-gray-800'}`}>
         {status}
       </span>
     );
