@@ -70,21 +70,22 @@ const Login: React.FC = () => {
   }
 
   return (
-    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4">
-      <div className="max-w-md w-full space-y-8">
+    <div className="min-h-screen flex items-center justify-center bg-gradient-to-br from-blue-50 to-indigo-100 px-4 py-8 sm:py-12">
+      <div className="max-w-md w-full space-y-6 sm:space-y-8">
         {/* Language Selector - Top Right */}
         <div className="flex justify-end">
           <LanguageSelector />
         </div>
 
+        {/* Header - Responsive */}
         <div className="text-center">
-          <div className="mx-auto h-12 w-12 bg-blue-600 rounded-full flex items-center justify-center">
-            <Clock className="h-6 w-6 text-white" />
+          <div className="mx-auto h-10 w-10 sm:h-12 sm:w-12 bg-blue-600 rounded-full flex items-center justify-center">
+            <Clock className="h-5 w-5 sm:h-6 sm:w-6 text-white" />
           </div>
-          <h2 className="mt-6 text-3xl font-extrabold text-gray-900">
+          <h2 className="mt-4 sm:mt-6 text-2xl sm:text-3xl font-extrabold text-gray-900">
             {t('title')}
           </h2>
-          <p className="mt-2 text-sm text-gray-600">
+          <p className="mt-2 text-xs sm:text-sm text-gray-600">
             {t('subtitle')}
           </p>
           <p className="mt-1 text-xs text-gray-500">
@@ -92,19 +93,21 @@ const Login: React.FC = () => {
           </p>
         </div>
 
-        <form className="mt-8 space-y-6" onSubmit={handleSubmit}>
+        {/* Form - Responsive */}
+        <form className="mt-6 sm:mt-8 space-y-4 sm:space-y-6" onSubmit={handleSubmit}>
           <div className="space-y-4">
+            {/* Company Select - Responsive */}
             <div>
-              <label htmlFor="company" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="company" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 {t('fields.company')} *
               </label>
               <div className="relative">
-                <Building2 className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Building2 className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <select
                   id="company"
                   value={formData.companyId}
                   onChange={(e) => setFormData(prev => ({ ...prev, companyId: e.target.value }))}
-                  className="appearance-none block w-full pl-12 pr-3 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full pl-10 sm:pl-12 pr-3 py-2.5 sm:py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 text-sm sm:text-base focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   required
                 >
                   <option value="">{t('placeholders.select_company')}</option>
@@ -117,36 +120,38 @@ const Login: React.FC = () => {
               </div>
             </div>
 
+            {/* Username Input - Responsive */}
             <div>
-              <label htmlFor="username" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="username" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 {t('fields.username')} *
               </label>
               <div className="relative">
-                <User className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <User className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="text"
                   id="username"
                   value={formData.username}
                   onChange={(e) => setFormData(prev => ({ ...prev, username: e.target.value }))}
-                  className="appearance-none block w-full px-12 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full pl-10 sm:pl-12 pr-3 py-2.5 sm:py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 text-sm sm:text-base focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder={t('placeholders.username')}
                   required
                 />
               </div>
             </div>
 
+            {/* Password Input - Responsive */}
             <div>
-              <label htmlFor="password" className="block text-sm font-medium text-gray-700 mb-1">
+              <label htmlFor="password" className="block text-xs sm:text-sm font-medium text-gray-700 mb-1">
                 {t('fields.password')} *
               </label>
               <div className="relative">
-                <Lock className="absolute left-3 top-3 h-5 w-5 text-gray-400" />
+                <Lock className="absolute left-3 top-2.5 sm:top-3 h-4 w-4 sm:h-5 sm:w-5 text-gray-400" />
                 <input
                   type="password"
                   id="password"
                   value={formData.password}
                   onChange={(e) => setFormData(prev => ({ ...prev, password: e.target.value }))}
-                  className="appearance-none block w-full px-12 py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 focus:outline-none focus:ring-blue-500 focus:border-blue-500"
+                  className="appearance-none block w-full pl-10 sm:pl-12 pr-3 py-2.5 sm:py-3 border border-gray-300 rounded-md placeholder-gray-500 text-gray-900 text-sm sm:text-base focus:outline-none focus:ring-blue-500 focus:border-blue-500"
                   placeholder={t('placeholders.password')}
                   required
                 />
@@ -154,17 +159,18 @@ const Login: React.FC = () => {
             </div>
           </div>
 
+          {/* Login Button - Responsive */}
           <div>
             <button
               type="submit"
               disabled={isLoading}
-              className="group relative w-full flex justify-center py-3 px-4 border border-transparent text-sm font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
+              className="group relative w-full flex justify-center py-2.5 sm:py-3 px-4 border border-transparent text-sm sm:text-base font-medium rounded-md text-white bg-blue-600 hover:bg-blue-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-blue-500 disabled:opacity-50 disabled:cursor-not-allowed"
             >
               {isLoading ? (
                 <div className="animate-spin rounded-full h-5 w-5 border-b-2 border-white" />
               ) : (
                 <>
-                  <LogIn className="h-5 w-5 mr-2" />
+                  <LogIn className="h-4 w-4 sm:h-5 sm:w-5 mr-2" />
                   {t('buttons.login')}
                 </>
               )}

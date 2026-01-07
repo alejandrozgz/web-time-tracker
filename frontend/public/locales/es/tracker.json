@@ -56,10 +56,23 @@
     "error": "Error"
   },
   "approval_status": {
-    "pending": "Pendiente de Revisión",
+    "legend": "Estado de aprobación",
+    "pending": "Pendiente",
     "approved": "Aprobado",
     "rejected": "Rechazado",
     "awaiting": "Esperando aprobación en BC",
-    "note_from_bc": "Nota de BC"
+    "note_from_bc": "Nota de BC",
+    "rejection_reason": "Motivo del rechazo"
+  },
+  "timesheet": {
+    "save_all": "Guardar Todo",
+    "discard": "Descartar",
+    "saving": "Guardando...",
+    "unsaved_changes": "{{count}} cambios sin guardar",
+    "click_to_edit": "Clic para editar",
+    "not_synced": "No Sincronizado",
+    "synced": "Sincronizado con BC",
+    "sync_error": "Error de Sincronización",
+    "unsaved": "Sin Guardar"
   }
 }

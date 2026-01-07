@@ -23,7 +23,13 @@
       "Bash(npx tsc:*)",
       "Bash(node scripts/create-admin.js:*)",
       "Bash(timeout 5 curl:*)",
-      "Bash(where:*)"
+      "Bash(where:*)",
+      "Bash(dir:*)",
+      "Bash(xcopy:*)",
+      "Bash(powershell -Command:*)",
+      "Bash(if exist build rmdir /s /q build)",
+      "Bash(npm audit:*)",
+      "Bash(Select-String -Pattern \"WeeklyTimesheet|Compiled\")"
     ],
     "deny": [],
     "ask": []

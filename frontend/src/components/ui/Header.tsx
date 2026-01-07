@@ -45,8 +45,10 @@ const Header: React.FC<HeaderProps> = () => {
           </div>
           {/* Right side - Language, User, Logout */}
           <div className="flex items-center space-x-4">
-            {/* Language Selector */}
-            <LanguageSelector />
+            {/* Language Selector - Desktop only */}
+            <div className="hidden md:block">
+              <LanguageSelector />
+            </div>
             {/* User info (desktop) */}
             <div className="hidden md:flex items-center space-x-2">
               <User className="h-4 w-4 text-gray-600" />

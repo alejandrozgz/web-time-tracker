@@ -31,7 +31,9 @@ const getWeekDates = (date: Date) => {
 const Dashboard: React.FC = () => {
   const { t } = useTranslation(['dashboard', 'common']);
   const { user, company } = useAuth();
-  const [activeTab, setActiveTab] = useState<'tracker' | 'timesheet'>('tracker');
+  const [activeTab, setActiveTab] = useState<'tracker' | 'timesheet'>(
+    user?.entryMode === 'timesheet' ? 'timesheet' : 'tracker'
+  );
   const [assignments, setAssignments] = useState<Assignment>({ jobs: [], tasks: [] });
   const [timeEntries, setTimeEntries] = useState<TimeEntry[]>([]);
   const [recentEntries, setRecentEntries] = useState<TimeEntry[]>([]);
@@ -216,15 +218,30 @@ const Dashboard: React.FC = () => {
     }
   }, [user, company, activeTab, loadRecentEntries, refreshApprovalStatus]);
 
+  // Sync active tab with user's entry mode
+  useEffect(() => {
+    if (user?.entryMode) {
+      setActiveTab(user.entryMode === 'timesheet' ? 'timesheet' : 'tracker');
+    }
+  }, [user?.entryMode]);
+
   const setWeekByDate = (date: Date) => {
     setCurrentWeek(getWeekDates(date));
   };
 
-  // Tabs with translations
+  // Tabs with translations - filter based on entry mode
   const tabs = [
     { id: 'tracker' as const, label: t('common:navigation.time_tracker'), icon: Play },
     { id: 'timesheet' as const, label: t('dashboard:charts.weekly_timesheet'), icon: Calendar }
-  ];
+  ].filter(tab => {
+    // Tracker mode: Show both tabs (tracker active, timesheet read-only)
+    // Timesheet mode: Show only timesheet tab (editable)
+    if (user?.entryMode === 'timesheet') {
+      return tab.id === 'timesheet'; // Hide tracker tab, show only timesheet
+    } else {
+      return true; // Show both tabs in tracker mode
+    }
+  });
 
   console.log('🔍 Dashboard - render, loading:', loading, 'jobs:', assignments?.jobs?.length || 0);
 
@@ -316,6 +333,7 @@ const Dashboard: React.FC = () => {
           companyId={company?.id || ''}
           onWeekChange={setWeekByDate}
           loading={loadingEntries}
+          editable={user?.entryMode === 'timesheet'}
         />
       )}
     </div>

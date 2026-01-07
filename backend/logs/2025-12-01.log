@@ -415,3 +415,188 @@
 [2025-12-01T16:57:53.552Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
 [2025-12-01T16:57:53.827Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
 [2025-12-01T16:57:54.228Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":682}
+[2025-12-01T18:08:30.950Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:08:30.950Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:08:31.339Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:08:32.352Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":1402}
+[2025-12-01T18:12:09.183Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:12:09.184Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:12:09.744Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:12:10.709Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":1526}
+[2025-12-01T18:12:11.284Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:12:11.342Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:12:11.649Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:12:12.172Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":888}
+[2025-12-01T18:14:41.266Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:14:41.267Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:14:41.522Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:14:42.192Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":926}
+[2025-12-01T18:14:42.706Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:14:42.707Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:14:43.309Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:14:43.735Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":1029}
+[2025-12-01T18:15:53.034Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:15:53.034Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:15:53.340Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:15:54.137Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":1103}
+[2025-12-01T18:15:54.882Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:15:54.883Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:15:55.144Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:15:55.589Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":707}
+[2025-12-01T18:16:07.372Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:16:07.373Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:16:07.660Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:16:08.210Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":839}
+[2025-12-01T18:16:08.843Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:16:08.845Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:16:09.225Z] [INFO] Synced entries found for refresh | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:16:09.608Z] [INFO] Refresh status completed | {"checked":3,"updated":3,"durationMs":765}
+[2025-12-01T18:16:50.396Z] [DEBUG] Fetching time entry for update | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581"}
+[2025-12-01T18:16:50.607Z] [DEBUG] Time entry found | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","bc_sync_status":"synced","approval_status":"rejected","is_editable":true}
+[2025-12-01T18:16:50.608Z] [DEBUG] Update time entry - current status | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","currentStatus":"synced"}
+[2025-12-01T18:16:50.609Z] [INFO] Updating time entry | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","newStatus":"not_synced","updates":["start_time","end_time","hours","description","bc_job_id","bc_task_id"]}
+[2025-12-01T18:16:50.609Z] [INFO] Entry is rejected, updating BC Job Journal Line | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","journalId":"2e6dab66-c4ce-f011-8542-7ced8d6ba699"}
+[2025-12-01T18:16:51.423Z] [INFO] BC Job Journal Line updated successfully | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","journalId":"2e6dab66-c4ce-f011-8542-7ced8d6ba699"}
+[2025-12-01T18:16:51.423Z] [INFO] Resetting approval status to pending for rejected entry | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581"}
+[2025-12-01T18:16:51.548Z] [INFO] Time entry updated successfully | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","finalStatus":"not_synced"}
+[2025-12-01T18:16:54.585Z] [INFO] Sync to BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:16:54.586Z] [INFO] Sync requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:16:54.784Z] [INFO] Pending entries found | {"count":3,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c","resourceNo":"R0010"}
+[2025-12-01T18:16:54.785Z] [DEBUG] Syncing entry to BC | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","batch":"TT-ELY-WEB","description":"TEST PENDING APPROVAL"}
+[2025-12-01T18:16:54.786Z] [DEBUG] Updating existing BC journal line | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","journalId":"2e6dab66-c4ce-f011-8542-7ced8d6ba699"}
+[2025-12-01T18:16:55.205Z] [DEBUG] Supabase update result | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","hasError":false,"error":null,"updatedCount":1}
+[2025-12-01T18:16:55.206Z] [INFO] ✅ Entry synced successfully to BC | {"entryId":"bf7129f4-584c-4a58-956d-7959de5a7581","batch":"TT-ELY-WEB","journalId":"2e6dab66-c4ce-f011-8542-7ced8d6ba699","lineNo":140000,"updatedInDb":true}
+[2025-12-01T18:16:55.206Z] [DEBUG] Syncing entry to BC | {"entryId":"e0b1cfd1-c453-4c32-acb3-e2cda7aebb25","batch":"TT-ELY-WEB","description":"TEST"}
+[2025-12-01T18:16:55.207Z] [DEBUG] Creating new BC journal line | {"entryId":"e0b1cfd1-c453-4c32-acb3-e2cda7aebb25"}
+[2025-12-01T18:16:55.398Z] [DEBUG] Supabase update result | {"entryId":"e0b1cfd1-c453-4c32-acb3-e2cda7aebb25","hasError":false,"error":null,"updatedCount":1}
+[2025-12-01T18:16:55.399Z] [INFO] ✅ Entry synced successfully to BC | {"entryId":"e0b1cfd1-c453-4c32-acb3-e2cda7aebb25","batch":"TT-ELY-WEB","journalId":"3bf572e5-e1ce-f011-8542-7c1e522d5b21","lineNo":160000,"updatedInDb":true}
+[2025-12-01T18:16:55.400Z] [DEBUG] Syncing entry to BC | {"entryId":"07285594-1b05-496f-9aa1-194247c514c6","batch":"TT-ELY-WEB","description":"TEST 2"}
+[2025-12-01T18:16:55.400Z] [DEBUG] Creating new BC journal line | {"entryId":"07285594-1b05-496f-9aa1-194247c514c6"}
+[2025-12-01T18:16:55.580Z] [DEBUG] Supabase update result | {"entryId":"07285594-1b05-496f-9aa1-194247c514c6","hasError":false,"error":null,"updatedCount":1}
+[2025-12-01T18:16:55.581Z] [INFO] ✅ Entry synced successfully to BC | {"entryId":"07285594-1b05-496f-9aa1-194247c514c6","batch":"TT-ELY-WEB","journalId":"3cf572e5-e1ce-f011-8542-7c1e522d5b21","lineNo":170000,"updatedInDb":true}
+[2025-12-01T18:16:55.684Z] [INFO] Batch record created | {"batchName":"TT-ELY-WEB","entries":3,"hours":"7.00"}
+[2025-12-01T18:16:55.774Z] [INFO] Sync to BC completed | {"synced":3,"failed":0,"batches":"TT-ELY-WEB","durationMs":997}
+[2025-12-01T18:17:52.284Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:17:52.285Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:17:52.606Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:17:53.686Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1402}
+[2025-12-01T18:17:54.211Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:17:54.213Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:17:54.431Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:17:55.003Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":792}
+[2025-12-01T18:19:29.296Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:19:29.297Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:19:29.741Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:19:31.252Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1956}
+[2025-12-01T18:19:57.772Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:19:57.773Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:19:58.087Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:19:59.014Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1242}
+[2025-12-01T18:20:05.760Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:20:05.761Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:20:06.447Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:20:07.493Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1733}
+[2025-12-01T18:21:45.687Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:21:45.688Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:21:45.960Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:21:46.970Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1283}
+[2025-12-01T18:21:47.559Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:21:47.566Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:21:47.791Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:21:48.335Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":776}
+[2025-12-01T18:22:38.017Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:38.028Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:22:38.386Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:39.196Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1180}
+[2025-12-01T18:22:39.801Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:39.802Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:22:40.070Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:40.710Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":909}
+[2025-12-01T18:22:53.047Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:53.048Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:22:53.375Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:54.396Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1349}
+[2025-12-01T18:22:54.978Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:54.979Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:22:55.215Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:22:55.804Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":826}
+[2025-12-01T18:23:34.977Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:23:34.982Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:23:35.289Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:23:35.903Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":926}
+[2025-12-01T18:23:37.027Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:23:37.028Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:23:37.239Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:23:37.862Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":835}
+[2025-12-01T18:28:28.735Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:28:28.736Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:28:29.269Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:28:30.398Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1663}
+[2025-12-01T18:28:31.007Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:28:31.009Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:28:31.229Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:28:32.281Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1274}
+[2025-12-01T18:30:40.195Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:30:40.196Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:30:40.450Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:30:41.135Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":940}
+[2025-12-01T18:30:41.590Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:30:41.591Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:30:41.923Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:30:42.501Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":911}
+[2025-12-01T18:31:54.123Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:31:54.124Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:31:54.430Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:31:55.227Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1104}
+[2025-12-01T18:31:55.755Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:31:55.757Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:31:55.989Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:31:56.582Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":827}
+[2025-12-01T18:33:16.586Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:33:16.586Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:33:16.938Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:33:17.982Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1397}
+[2025-12-01T18:34:19.280Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:19.281Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:34:19.655Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:20.536Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1256}
+[2025-12-01T18:34:21.257Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:21.258Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:34:21.513Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:22.080Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":823}
+[2025-12-01T18:34:43.448Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:43.449Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:34:43.720Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:44.623Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1175}
+[2025-12-01T18:34:45.300Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:45.301Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:34:45.552Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:34:46.374Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1074}
+[2025-12-01T18:35:11.719Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:35:11.720Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:35:12.166Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:35:13.231Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1512}
+[2025-12-01T18:35:14.073Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:35:14.074Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:35:14.322Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:35:14.973Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":900}
+[2025-12-01T18:37:44.670Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:37:44.672Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:37:44.951Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:37:45.968Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1298}
+[2025-12-01T18:38:36.805Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:38:36.809Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:38:37.107Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:38:37.919Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1114}
+[2025-12-01T18:38:38.638Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:38:38.640Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:38:38.917Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:38:39.528Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":890}
+[2025-12-01T18:45:43.996Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:45:43.997Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:45:44.399Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:45:45.497Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":1501}
+[2025-12-01T18:45:46.233Z] [INFO] Refresh status from BC started | {"tenantSlug":"empresa-demo","companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:45:46.234Z] [INFO] Refresh status requested by user | {"resourceNo":"R0010"}
+[2025-12-01T18:45:46.479Z] [INFO] Synced entries found for refresh | {"count":5,"companyId":"b19e3410-5318-4dfc-8422-8c1ee47d957c"}
+[2025-12-01T18:45:47.091Z] [INFO] Refresh status completed | {"checked":5,"updated":5,"durationMs":858}

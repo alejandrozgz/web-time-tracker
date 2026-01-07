@@ -79,5 +79,6 @@
       "errors": "{{count}} errores"
     },
     "pending_hours": "{{hours}}h pendientes"
-  }
+  },
+  "locale": "es-ES"
 }

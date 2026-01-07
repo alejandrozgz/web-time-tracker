@@ -56,10 +56,23 @@
     "error": "Error"
   },
   "approval_status": {
+    "legend": "Approval Status",
     "pending": "Pending Review",
     "approved": "Approved",
     "rejected": "Rejected",
     "awaiting": "Awaiting approval in BC",
-    "note_from_bc": "Note from BC"
+    "note_from_bc": "Note from BC",
+    "rejection_reason": "Rejection reason"
+  },
+  "timesheet": {
+    "save_all": "Save All",
+    "discard": "Discard",
+    "saving": "Saving...",
+    "unsaved_changes": "{{count}} unsaved changes",
+    "click_to_edit": "Click to edit",
+    "not_synced": "Not Synced",
+    "synced": "Synced to BC",
+    "sync_error": "Sync Error",
+    "unsaved": "Unsaved"
   }
 }

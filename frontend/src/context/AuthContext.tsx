@@ -86,13 +86,19 @@ export const AuthProvider: React.FC<{ children: React.ReactNode }> = ({ children
 
     const response = await apiService.login({ username, password, companyId });
 
-    setUser(response.user);
+    // Ensure user object includes entryMode with fallback
+    const userWithMode = {
+      ...response.user,
+      entryMode: response.user.entryMode || 'tracker'
+    };
+
+    setUser(userWithMode);
     setTenant(response.tenant);
     setCompany(response.company);
 
     // 🔑 Guardar token y datos con clave específica del tenant
     localStorage.setItem(getTokenKey(tenantSlug), response.token);
-    localStorage.setItem(getUserKey(tenantSlug), JSON.stringify(response.user));
+    localStorage.setItem(getUserKey(tenantSlug), JSON.stringify(userWithMode));
     localStorage.setItem(getTenantKey(tenantSlug), JSON.stringify(response.tenant));
     localStorage.setItem(getCompanyKey(tenantSlug), JSON.stringify(response.company));
 

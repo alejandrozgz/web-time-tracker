@@ -2,6 +2,7 @@ export interface User {
   id: string;
   resourceNo: string;
   displayName: string;
+  entryMode?: 'tracker' | 'timesheet';
 }
 
 export interface Tenant {
@@ -42,6 +43,12 @@ export enum ApprovalStatus {
   PENDING = 'pending',
   APPROVED = 'approved',
   REJECTED = 'rejected'
+}
+
+// 🎯 ENUM PARA ENTRY MODE
+export enum EntryMode {
+  TRACKER = 'tracker',
+  TIMESHEET = 'timesheet'
 }
 
 // 📊 INTERFAZ ACTUALIZADA PARA TIME ENTRY - USANDO BC IDs DIRECTAMENTE
@@ -378,4 +385,46 @@ export interface AdminCompanyFilters {
   search?: string;
   limit?: number;
   offset?: number;
+}
+
+// ======================================
+// TIMESHEET EDITING TYPES
+// ======================================
+
+// Timesheet cell edit state
+export interface TimesheetCellEdit {
+  taskKey: string;       // Format: ${bc_job_id}-${bc_task_id}
+  date: string;          // ISO date string
+  hours: number;         // Current edited value
+  originalHours: number; // Original value from database
+  isDirty: boolean;      // Has been modified
+}
+
+// Pending changes map (key = ${taskKey}:${date})
+export interface TimesheetPendingChanges {
+  [cellKey: string]: TimesheetCellEdit;
+}
+
+// Bulk save request
+export interface BulkTimeEntrySaveRequest {
+  companyId: string;
+  entries: Array<{
+    bc_job_id: string;
+    bc_task_id: string;
+    date: string;
+    hours: number;
+    description: string;
+  }>;
+}
+
+// Bulk save response
+export interface BulkTimeEntrySaveResponse {
+  success: boolean;
+  created: number;
+  updated: number;
+  failed: number;
+  errors?: Array<{
+    entry: any;
+    error: string;
+  }>;
 }

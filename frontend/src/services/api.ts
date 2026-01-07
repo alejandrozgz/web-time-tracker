@@ -12,7 +12,9 @@ import {
   BCSyncLog,
   SyncLogFilters,
   SyncStatistics,
-  SyncActivity
+  SyncActivity,
+  BulkTimeEntrySaveRequest,
+  BulkTimeEntrySaveResponse
 } from '../types';
 
 const API_BASE_URL = process.env.REACT_APP_API_URL || 'http://localhost:3000/api';
@@ -98,6 +100,12 @@ class ApiService {
 
   async deleteTimeEntry(id: string): Promise<void> {
     await this.client.delete(`/time-entries?id=${id}`);
+  }
+
+  // 💾 BULK TIME ENTRY OPERATIONS
+  async bulkSaveTimeEntries(data: BulkTimeEntrySaveRequest): Promise<BulkTimeEntrySaveResponse> {
+    const response = await this.client.post('/time-entries/bulk', data);
+    return response.data;
   }
 
   // 🔄 BUSINESS CENTRAL SYNC METHODS
