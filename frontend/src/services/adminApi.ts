@@ -91,6 +91,24 @@ class AdminApiService {
     await this.client.delete(`/tenants/${id}`);
   }
 
+  async syncTenant(tenantId: string) {
+    const response = await this.client.post('/sync', { tenantId });
+    return response.data as {
+      success: boolean;
+      synced: number;
+      failed: number;
+      companies: Array<{
+        company_id: string;
+        company_name: string;
+        synced: number;
+        failed: number;
+        errors?: string[];
+      }>;
+      duration_ms: number;
+      error?: string;
+    };
+  }
+
   // ========== COMPANIES ==========
 
   async getCompanies(filters?: AdminCompanyFilters) {

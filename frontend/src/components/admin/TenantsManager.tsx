@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { Plus, Edit, Trash2, RefreshCw, Search, Server } from 'lucide-react';
+import { Plus, Edit, Trash2, RefreshCw, Search, Server, Upload } from 'lucide-react';
 import adminApiService from '../../services/adminApi';
 import { TenantFull, CreateTenantData } from '../../types';
 import toast from 'react-hot-toast';
@@ -10,6 +10,7 @@ const TenantsManager: React.FC = () => {
   const [search, setSearch] = useState('');
   const [showCreateModal, setShowCreateModal] = useState(false);
   const [editingTenant, setEditingTenant] = useState<TenantFull | null>(null);
+  const [syncingTenant, setSyncingTenant] = useState<string | null>(null);
 
   useEffect(() => {
     loadTenants();
@@ -63,6 +64,28 @@ const TenantsManager: React.FC = () => {
       loadTenants();
     } catch (error: any) {
       toast.error(error.response?.data?.error || 'Failed to delete tenant');
+    }
+  };
+
+  const handleSync = async (tenant: TenantFull) => {
+    if (!tenant.oauth_enabled) {
+      toast.error('BC sync not enabled for this tenant');
+      return;
+    }
+
+    setSyncingTenant(tenant.id);
+    try {
+      const result = await adminApiService.syncTenant(tenant.id);
+      if (result.success) {
+        toast.success(`Synced ${result.synced} entries (${result.failed} failed)`);
+      } else {
+        toast.error(result.error || 'Sync failed');
+      }
+    } catch (error: any) {
+      console.error('Sync error:', error);
+      toast.error(error.response?.data?.error || 'Failed to sync tenant');
+    } finally {
+      setSyncingTenant(null);
     }
   };
 
@@ -133,6 +156,18 @@ const TenantsManager: React.FC = () => {
                   </span>
                 </td>
                 <td className="px-6 py-4 text-right space-x-2">
+                  <button
+                    onClick={() => handleSync(tenant)}
+                    disabled={syncingTenant === tenant.id || !tenant.oauth_enabled}
+                    className={`p-2 rounded ${
+                      tenant.oauth_enabled
+                        ? 'text-green-600 hover:bg-green-50'
+                        : 'text-gray-400 cursor-not-allowed'
+                    }`}
+                    title={tenant.oauth_enabled ? 'Sync all entries to BC' : 'BC sync not enabled'}
+                  >
+                    <Upload className={`w-4 h-4 ${syncingTenant === tenant.id ? 'animate-pulse' : ''}`} />
+                  </button>
                   <button
                     onClick={() => setEditingTenant(tenant)}
                     className="p-2 text-blue-600 hover:bg-blue-50 rounded"

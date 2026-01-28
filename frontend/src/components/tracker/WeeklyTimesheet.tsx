@@ -62,7 +62,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     
     timeEntries.forEach(entry => {
       const entryDate = entry.date;
-      const taskKey = `${entry.bc_job_id}-${entry.bc_task_id}`; // Clave compuesta
+      const taskKey = `${entry.bc_job_id}::${entry.bc_task_id}`; // Clave compuesta (:: evita conflictos con guiones en IDs)
       
       if (!matrix[taskKey]) {
         matrix[taskKey] = {};
@@ -97,7 +97,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
 
   // Calculate totals using task keys
   const getTaskTotal = (job: any, task: any): number => {
-    const taskKey = `${job.bc_job_id}-${task.bc_task_id}`;
+    const taskKey = `${job.bc_job_id}::${task.bc_task_id}`;
     return weekDates.reduce((total, date) => {
       const dateStr = date.toISOString().split('T')[0];
       return total + (timeMatrix[taskKey]?.[dateStr] || 0);
@@ -108,7 +108,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     return assignments.jobs.reduce((total, job) => {
       const jobTasks = assignments.tasks.filter(task => task.job_id === job.id);
       return total + jobTasks.reduce((taskTotal, task) => {
-        const taskKey = `${job.bc_job_id}-${task.bc_task_id}`;
+        const taskKey = `${job.bc_job_id}::${task.bc_task_id}`;
         return taskTotal + (timeMatrix[taskKey]?.[date] || 0);
       }, 0);
     }, 0);
@@ -233,7 +233,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
       const dirtyChanges = Object.values(pendingChanges).filter(cell => cell.isDirty);
 
       const entries = dirtyChanges.map(cell => {
-        const [bc_job_id, bc_task_id] = cell.taskKey.split('-');
+        const [bc_job_id, bc_task_id] = cell.taskKey.split('::');
         return {
           bc_job_id,
           bc_task_id,
@@ -428,7 +428,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                 {/* Tasks - Responsive */}
                 {jobGroup.tasks.map((task) => (
                   <tr
-                    key={`${jobGroup.job.bc_job_id}-${task.bc_task_id}`}
+                    key={`${jobGroup.job.bc_job_id}::${task.bc_task_id}`}
                     className="border-b border-gray-100"
                   >
                     <td className="p-2 sm:p-4">
@@ -439,7 +439,7 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
 
                     {weekDates.map((date, dayIndex) => {
                       const dateStr = date.toISOString().split('T')[0];
-                      const taskKey = `${jobGroup.job.bc_job_id}-${task.bc_task_id}`;
+                      const taskKey = `${jobGroup.job.bc_job_id}::${task.bc_task_id}`;
                       const cellKey = `${taskKey}:${dateStr}`;
 
                       const cellEdit = getCellEditState(cellKey);

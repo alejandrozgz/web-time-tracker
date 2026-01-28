@@ -393,7 +393,7 @@ export interface AdminCompanyFilters {
 
 // Timesheet cell edit state
 export interface TimesheetCellEdit {
-  taskKey: string;       // Format: ${bc_job_id}-${bc_task_id}
+  taskKey: string;       // Format: ${bc_job_id}::${bc_task_id}
   date: string;          // ISO date string
   hours: number;         // Current edited value
   originalHours: number; // Original value from database

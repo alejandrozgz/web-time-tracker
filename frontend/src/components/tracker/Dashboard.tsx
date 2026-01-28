@@ -96,14 +96,17 @@ const Dashboard: React.FC = () => {
   }, [company]);
 
   const loadTimeEntries = useCallback(async () => {
-    if (!company) return;
+    if (!company || !user) return;
 
     setLoadingEntries(true);
     try {
       const timeEntriesData = await apiService.getTimeEntries(
         company.id,
         formatDate(currentWeek.start),
-        formatDate(currentWeek.end)
+        formatDate(currentWeek.end),
+        undefined,  // limit
+        undefined,  // offset
+        user.resourceNo  // Filter by current user
       );
 
       setTimeEntries(Array.isArray(timeEntriesData) ? timeEntriesData : []);
@@ -114,7 +117,7 @@ const Dashboard: React.FC = () => {
     } finally {
       setLoadingEntries(false);
     }
-  }, [company, currentWeek.start, currentWeek.end]);
+  }, [company, user, currentWeek.start, currentWeek.end]);
 
   const loadRecentEntries = useCallback(async (page = 1, append = false) => {
     if (!company || !user) return;
