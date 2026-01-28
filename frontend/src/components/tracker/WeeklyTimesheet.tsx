@@ -218,6 +218,87 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
     setEditingCell(null);
   };
 
+  // Get all task keys for navigation
+  const getAllTaskKeys = () => tasksByJob.flatMap(group =>
+    group.tasks.map(task => `${group.job.bc_job_id}::${task.bc_task_id}`)
+  );
+
+  // Navigate to a specific cell and set it up for editing
+  const navigateToCell = (taskKey: string, dayIndex: number) => {
+    const dateStr = weekDates[dayIndex].toISOString().split('T')[0];
+    const cellKey = `${taskKey}:${dateStr}`;
+    const currentHours = timeMatrix[taskKey]?.[dateStr] || 0;
+
+    // Set up the new cell for editing
+    if (!pendingChanges[cellKey]) {
+      setPendingChanges(prev => ({
+        ...prev,
+        [cellKey]: {
+          taskKey: taskKey,
+          date: dateStr,
+          hours: currentHours,
+          originalHours: currentHours,
+          isDirty: false
+        }
+      }));
+    }
+
+    setEditingCell(cellKey);
+  };
+
+  // Navigate horizontally (Tab, Arrow Left/Right)
+  const navigateHorizontal = (currentTaskKey: string, currentDayIndex: number, direction: 'next' | 'prev') => {
+    const allTaskKeys = getAllTaskKeys();
+    const currentTaskIndex = allTaskKeys.indexOf(currentTaskKey);
+    let newDayIndex = currentDayIndex;
+    let newTaskIndex = currentTaskIndex;
+
+    if (direction === 'next') {
+      newDayIndex = currentDayIndex + 1;
+      if (newDayIndex >= 7) {
+        // Move to next task, first day
+        newDayIndex = 0;
+        newTaskIndex = currentTaskIndex + 1;
+        if (newTaskIndex >= allTaskKeys.length) {
+          newTaskIndex = 0; // Wrap to first task
+        }
+      }
+    } else {
+      newDayIndex = currentDayIndex - 1;
+      if (newDayIndex < 0) {
+        // Move to previous task, last day
+        newDayIndex = 6;
+        newTaskIndex = currentTaskIndex - 1;
+        if (newTaskIndex < 0) {
+          newTaskIndex = allTaskKeys.length - 1; // Wrap to last task
+        }
+      }
+    }
+
+    navigateToCell(allTaskKeys[newTaskIndex], newDayIndex);
+  };
+
+  // Navigate vertically (Arrow Up/Down)
+  const navigateVertical = (currentTaskKey: string, currentDayIndex: number, direction: 'up' | 'down') => {
+    const allTaskKeys = getAllTaskKeys();
+    const currentTaskIndex = allTaskKeys.indexOf(currentTaskKey);
+    let newTaskIndex = currentTaskIndex;
+
+    if (direction === 'down') {
+      newTaskIndex = currentTaskIndex + 1;
+      if (newTaskIndex >= allTaskKeys.length) {
+        newTaskIndex = 0; // Wrap to first task
+      }
+    } else {
+      newTaskIndex = currentTaskIndex - 1;
+      if (newTaskIndex < 0) {
+        newTaskIndex = allTaskKeys.length - 1; // Wrap to last task
+      }
+    }
+
+    navigateToCell(allTaskKeys[newTaskIndex], currentDayIndex);
+  };
+
   const getCellEditState = (cellKey: string) => {
     return pendingChanges[cellKey];
   };
@@ -465,16 +546,48 @@ const WeeklyTimesheet: React.FC<WeeklyTimesheetProps> = ({
                               max="24"
                               value={displayValue}
                               onChange={(e) => handleCellChange(cellKey, parseFloat(e.target.value) || 0)}
-                              onBlur={handleCellBlur}
+                              onBlur={(e) => {
+                                // Only blur if not navigating with Tab
+                                const relatedTarget = e.relatedTarget as HTMLElement;
+                                if (!relatedTarget?.closest('.timesheet-cell-input')) {
+                                  handleCellBlur();
+                                }
+                              }}
                               onKeyDown={(e) => {
-                                if (e.key === 'Enter') handleCellBlur();
+                                if (e.key === 'Enter') {
+                                  e.preventDefault();
+                                  handleCellBlur();
+                                }
                                 if (e.key === 'Escape') {
                                   handleDiscardAll();
                                   handleCellBlur();
                                 }
+                                if (e.key === 'Tab') {
+                                  e.preventDefault();
+                                  navigateHorizontal(taskKey, dayIndex, e.shiftKey ? 'prev' : 'next');
+                                }
+                                // Arrow keys for horizontal navigation (days)
+                                if (e.key === 'ArrowRight') {
+                                  e.preventDefault();
+                                  navigateHorizontal(taskKey, dayIndex, 'next');
+                                }
+                                if (e.key === 'ArrowLeft') {
+                                  e.preventDefault();
+                                  navigateHorizontal(taskKey, dayIndex, 'prev');
+                                }
+                                // Arrow keys for vertical navigation (tasks/projects)
+                                if (e.key === 'ArrowDown') {
+                                  e.preventDefault();
+                                  navigateVertical(taskKey, dayIndex, 'down');
+                                }
+                                if (e.key === 'ArrowUp') {
+                                  e.preventDefault();
+                                  navigateVertical(taskKey, dayIndex, 'up');
+                                }
                               }}
                               autoFocus
                               className={`
+                                timesheet-cell-input
                                 w-12 sm:w-16 px-1 sm:px-2 py-1 text-center text-xs sm:text-sm border rounded
                                 focus:outline-none focus:ring-2 focus:ring-blue-500
                                 ${isDirty ? 'bg-yellow-50 border-yellow-400' : 'border-gray-300'}
